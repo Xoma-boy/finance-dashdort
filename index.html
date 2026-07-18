@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Dashboard</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+background:#0B1220;
+color:white;
+}
+
+.container{
+display:grid;
+grid-template-columns:260px 1fr;
+height:100vh;
+}
+
+.sidebar{
+background:#111827;
+padding:20px;
+border-right:1px solid #1E293B;
+}
+
+.logo{
+font-size:24px;
+font-weight:700;
+margin-bottom:30px;
+}
+
+.menu div{
+padding:12px;
+margin-bottom:10px;
+background:#1E293B;
+border-radius:12px;
+}
+
+.content{
+padding:20px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:15px;
+}
+
+.card{
+background:#1E293B;
+padding:20px;
+border-radius:16px;
+}
+
+.card h3{
+font-size:14px;
+margin-bottom:10px;
+color:#94A3B8;
+}
+
+.card .value{
+font-size:32px;
+font-weight:700;
+}
+
+.green{color:#22C55E;}
+.red{color:#EF4444;}
+.blue{color:#3B82F6;}
+.yellow{color:#FBBF24;}
+.purple{color:#A855F7;}
+
+.grid{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:15px;
+margin-top:20px;
+}
+
+.panel{
+background:#1E293B;
+border-radius:16px;
+padding:20px;
+min-height:300px;
+}
+
+.panel h2{
+margin-bottom:15px;
+}
+
+.chart{
+height:220px;
+background:#111827;
+border-radius:10px;
+display:flex;
+justify-content:center;
+align-items:center;
+color:#64748B;
+}
+
+.bottom{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:15px;
+margin-top:20px;
+}
+
+@media(max-width:1200px){
+
+.container{
+grid-template-columns:1fr;
+}
+
+.cards{
+grid-template-columns:1fr;
+}
+
+.grid{
+grid-template-columns:1fr;
+}
+
+.bottom{
+grid-template-columns:1fr;
+}
+
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="sidebar">
+
+<div class="logo">
+💰 Finance
+</div>
+
+<div class="menu">
+<div>Доходы</div>
+<div>Расходы</div>
+<div>Инвестиции</div>
+<div>Крипта</div>
+<div>Акции</div>
+<div>Цели</div>
+</div>
+
+</div>
+
+<div class="content">
+
+<div class="cards">
+
+<div class="card">
+<h3>Доходы</h3>
+<div class="value green">25 383</div>
+</div>
+
+<div class="card">
+<h3>Расходы</h3>
+<div class="value red">9 337</div>
+</div>
+
+<div class="card">
+<h3>Баланс</h3>
+<div class="value blue">16 046</div>
+</div>
+
+<div class="card">
+<h3>Накопления</h3>
+<div class="value yellow">63%</div>
+</div>
+
+<div class="card">
+<h3>Цель</h3>
+<div class="value purple">72%</div>
+</div>
+
+</div>
+
+<div class="grid">
+
+<div class="panel">
+<h2>📈 Динамика доходов и расходов</h2>
+<div class="chart">
+График будет подключен на следующем шаге
+</div>
+</div>
+
+<div class="panel">
+<h2>🍩 Структура расходов</h2>
+<div class="chart">
+Круговая диаграмма
+</div>
+</div>
+
+</div>
+
+<div class="bottom">
+
+<div class="panel">
+<h2>💵 Источники дохода</h2>
+
+Зарплата — 9195<br><br>
+Инвестиции — 0<br><br>
+Сбережения — 16000<br><br>
+Тренерство — 50
+
+</div>
+
+<div class="panel">
+<h2>🔥 TOP расходов</h2>
+
+Квартира — 3043<br>
+Подарки — 2050<br>
+Маме — 2000<br>
+Бедренка — 1270
+
+</div>
+
+<div class="panel">
+<h2>🎯 Финансовая цель</h2>
+
+100 000 PLN
+
+<br><br>
+
+Прогресс: 16%
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
