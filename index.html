@@ -5,272 +5,660 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finance Dashboard Pro</title>
 
-https://cdn.jsdelivr.net/npm/chart.js</script>
+https://cdn.jsdelivr.net/npm/chart.jsscript>
 
 <style>
+
 :root{
 --bg:#0b1220;
---panel:#111827;
+--sidebar:#111827;
 --card:#1e293b;
+--card2:#0f172a;
 --green:#22c55e;
 --red:#ef4444;
 --blue:#3b82f6;
 --yellow:#fbbf24;
 --purple:#a855f7;
+--text:#ffffff;
+--muted:#94a3b8;
 }
 
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:Segoe UI,sans-serif;
+font-family:'Segoe UI',sans-serif;
 }
 
 body{
 background:var(--bg);
-color:#fff;
+color:var(--text);
+overflow-x:hidden;
 }
 
-.wrapper{
+.layout{
 display:grid;
-grid-template-columns:260px 1fr;
+grid-template-columns:280px 1fr;
 min-height:100vh;
 }
 
 .sidebar{
-background:var(--panel);
-padding:20px;
+background:#111827;
+padding:25px;
+border-right:1px solid #1f2937;
 }
 
 .logo{
-font-size:26px;
-font-weight:bold;
-margin-bottom:25px;
+font-size:28px;
+font-weight:700;
+margin-bottom:30px;
 }
 
-.menu div{
-background:var(--card);
+.logo span{
+color:var(--green);
+}
+
+.menu{
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.menu-item{
+background:#1e293b;
 padding:14px;
+border-radius:14px;
+cursor:pointer;
+transition:.3s;
+}
+
+.menu-item:hover{
+background:#253449;
+}
+
+.main{
+padding:25px;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.title{
+font-size:28px;
+font-weight:700;
+}
+
+.subtitle{
+color:var(--muted);
+margin-top:5px;
+}
+
+.actions{
+display:flex;
+gap:10px;
+}
+
+.btn{
+padding:12px 16px;
+border:none;
 border-radius:12px;
-margin-bottom:10px;
+background:#1e293b;
+color:white;
+cursor:pointer;
 }
 
-.content{
-padding:20px;
+.btn-primary{
+background:var(--blue);
 }
 
-.cards{
+.kpi-grid{
 display:grid;
 grid-template-columns:repeat(5,1fr);
 gap:15px;
 }
 
 .card{
-background:linear-gradient(135deg,#1e293b,#111827);
-padding:20px;
-border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,.3);
+background:linear-gradient(
+145deg,
+#1e293b,
+#0f172a
+);
+border-radius:22px;
+padding:22px;
+box-shadow:
+0 15px 35px rgba(0,0,0,.25);
 }
 
-.card-title{
-opacity:.7;
-margin-bottom:10px;
+.card-label{
+font-size:14px;
+color:var(--muted);
 }
 
 .card-value{
-font-size:32px;
-font-weight:bold;
+font-size:36px;
+font-weight:700;
+margin-top:10px;
 }
 
-.green{color:var(--green);}
-.red{color:var(--red);}
-.blue{color:var(--blue);}
-.yellow{color:var(--yellow);}
-.purple{color:var(--purple);}
+.green{
+color:var(--green);
+}
 
-.grid{
+.red{
+color:var(--red);
+}
+
+.blue{
+color:var(--blue);
+}
+
+.yellow{
+color:var(--yellow);
+}
+
+.purple{
+color:var(--purple);
+}
+
+.card-growth{
+margin-top:10px;
+font-size:13px;
+color:#94a3b8;
+}
+
+.grid-main{
 display:grid;
 grid-template-columns:2fr 1fr;
-gap:15px;
-margin-top:15px;
+gap:18px;
+margin-top:20px;
 }
 
 .panel{
-background:var(--card);
+background:#1e293b;
+border-radius:22px;
 padding:20px;
-border-radius:20px;
 }
 
-.bottom{
+.panel-title{
+font-size:20px;
+font-weight:600;
+margin-bottom:20px;
+}
+
+.chart-container{
+height:350px;
+}
+
+.grid-bottom{
 display:grid;
 grid-template-columns:1fr 1fr 1fr;
-gap:15px;
-margin-top:15px;
+gap:18px;
+margin-top:20px;
 }
 
-.list div{
+.list-row{
 display:flex;
 justify-content:space-between;
-padding:10px 0;
+padding:12px 0;
 border-bottom:1px solid rgba(255,255,255,.08);
 }
 
 .progress{
 height:20px;
 background:#334155;
-border-radius:20px;
+border-radius:50px;
 overflow:hidden;
 margin-top:15px;
 }
 
-.fill{
+.progress-fill{
 height:100%;
 width:16%;
-background:linear-gradient(90deg,#22c55e,#84cc16);
+background:linear-gradient(
+90deg,
+#22c55e,
+#84cc16
+);
 }
 
-canvas{
-max-height:300px;
+.big-number{
+font-size:42px;
+font-weight:700;
+margin-top:10px;
+}
+
+.table{
+width:100%;
+margin-top:15px;
+border-collapse:collapse;
+}
+
+.table th{
+text-align:left;
+color:#94a3b8;
+padding:10px;
+}
+
+.table td{
+padding:10px;
+border-top:1px solid rgba(255,255,255,.08);
 }
 
 @media(max-width:1200px){
 
-.wrapper{
+.layout{
 grid-template-columns:1fr;
 }
 
-.cards{
+.kpi-grid{
 grid-template-columns:1fr;
 }
 
-.grid{
+.grid-main{
 grid-template-columns:1fr;
 }
 
-.bottom{
+.grid-bottom{
 grid-template-columns:1fr;
 }
+
 }
+
 </style>
+
 </head>
 
 <body>
 
-<div class="wrapper">
+<div class="layout">
 
 <div class="sidebar">
 
 <div class="logo">
-💰 Finance
+💰 <span>Finance</span>
 </div>
 
 <div class="menu">
-<div>📈 Доходы</div>
-<div>💸 Расходы</div>
-<div>📊 Аналитика</div>
-<div>₿ Крипта</div>
-<div>📈 Акции</div>
-<div>🎯 Цели</div>
+
+<div class="menu-item">
+📊 Dashboard
+</div>
+
+<div class="menu-item">
+📈 Доходы
+</div>
+
+<div class="menu-item">
+💸 Расходы
+</div>
+
+<div class="menu-item">
+🎯 Финансовая цель
+</div>
+
+<div class="menu-item">
+₿ Крипта
+</div>
+
+<div class="menu-item">
+📈 Акции
+</div>
+
+<div class="menu-item">
+💼 Инвестиции
+</div>
+
+<div class="menu-item">
+⚙️ Настройки
 </div>
 
 </div>
 
-<div class="content">
+</div>
 
-<div class="cards">
+<div class="main">
+
+<div class="topbar">
+
+<div>
+
+<div class="title">
+Financial Dashboard
+</div>
+
+<div class="subtitle">
+Контроль доходов, расходов и инвестиций
+</div>
+
+</div>
+
+<div class="actions">
+
+<button class="btn">
+PLN
+</button>
+
+<button class="btn">
+EUR
+</button>
+
+<button class="btn">
+USD
+</button>
+
+<button class="btn btn-primary">
+Добавить
+</button>
+
+</div>
+
+</div>
+
+<div class="kpi-grid">
 
 <div class="card">
-<div class="card-title">Доходы</div>
-<div class="card-value green">25 383</div>
+<div class="card-label">
+Общий доход
+</div>
+
+<div class="card-value green">
+25 383
+</div>
+
+<div class="card-growth">
+▲ +12.4% к прошлому месяцу
+</div>
+
 </div>
 
 <div class="card">
-<div class="card-title">Расходы</div>
-<div class="card-value red">9 337</div>
+
+<div class="card-label">
+Общие расходы
+</div>
+
+<div class="card-value red">
+9 337
+</div>
+
+<div class="card-growth">
+▼ -2.7% к прошлому месяцу
+</div>
+
 </div>
 
 <div class="card">
-<div class="card-title">Баланс</div>
-<div class="card-value blue">16 046</div>
+
+<div class="card-label">
+Баланс
+</div>
+
+<div class="card-value blue">
+16 046
+</div>
+
+<div class="card-growth">
+Текущий остаток
+</div>
+
 </div>
 
 <div class="card">
-<div class="card-title">Накопления</div>
-<div class="card-value yellow">63%</div>
+
+<div class="card-label">
+Накопления
+</div>
+
+<div class="card-value yellow">
+63%
+</div>
+
+<div class="card-growth">
+От дохода
+</div>
+
 </div>
 
 <div class="card">
-<div class="card-title">Цель</div>
-<div class="card-value purple">72%</div>
+
+<div class="card-label">
+Финансовая цель
+</div>
+
+<div class="card-value purple">
+16%
+</div>
+
+<div class="card-growth">
+16 046 / 100 000
 </div>
 
 </div>
 
-<div class="grid">
+</div>
+
+<div class="grid-main">
 
 <div class="panel">
-<h2>📈 Динамика доходов и расходов</h2>
+
+<div class="panel-title">
+📈 Динамика доходов и расходов
+</div>
+
+<div class="chart-container">
 <canvas id="incomeChart"></canvas>
 </div>
 
+</div>
+
 <div class="panel">
-<h2>🍩 Структура расходов</h2>
+
+<div class="panel-title">
+🍩 Структура расходов
+</div>
+
+<div class="chart-container">
 <canvas id="expenseChart"></canvas>
 </div>
 
 </div>
 
-<div class="bottom">
+</div>
+
+<div class="grid-bottom">
 
 <div class="panel">
 
-<h2>💵 Источники дохода</h2>
+<div class="panel-title">
+💵 Доходы по источникам
+</div>
 
-<div class="list">
-<div><span>Зарплата</span><span>9195</span></div>
-<div><span>Сбережения</span><span>16000</span></div>
-<div><span>Инвестиции</span><span>0</span></div>
-<div><span>Тренерство</span><span>50</span></div>
+<div class="list-row">
+<span>Зарплата</span>
+<span>9 195 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Сбережения</span>
+<span>16 000 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Инвестиции</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Крипта</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Акции</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Тренерство</span>
+<span>50 PLN</span>
 </div>
 
 </div>
 
 <div class="panel">
 
-<h2>🔥 TOP расходов</h2>
+<div class="panel-title">
+🔥 TOP расходов
+</div>
 
-<div class="list">
-<div><span>Квартира</span><span>3043</span></div>
-<div><span>Подарки</span><span>2050</span></div>
-<div><span>Маме</span><span>2000</span></div>
-<div><span>Бедренка</span><span>1270</span></div>
+<div class="list-row">
+<span>Квартира</span>
+<span>3043 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Подарки</span>
+<span>2050 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Маме</span>
+<span>2000 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Бедренка</span>
+<span>1270 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Интернет</span>
+<span>50 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Зал</span>
+<span>50 PLN</span>
 </div>
 
 </div>
 
 <div class="panel">
 
-<h2>📈 Инвестиции</h2>
-
-<div class="list">
-<div><span>Крипта</span><span>0 PLN</span></div>
-<div><span>Акции</span><span>0 PLN</span></div>
-<div><span>Портфель</span><span>0 PLN</span></div>
+<div class="panel-title">
+🎯 Финансовая цель
 </div>
 
-<h2 style="margin-top:25px">🎯 Финансовая цель</h2>
+<div class="big-number">
+100 000 PLN
+</div>
 
 <div class="progress">
-<div class="fill"></div>
+<div class="progress-fill"></div>
 </div>
 
-<p style="margin-top:10px">
-16 046 PLN из 100 000 PLN
-</p>
+<div style="margin-top:15px">
+Накоплено: 16 046 PLN
+</div>
+
+<div style="margin-top:10px;color:#94a3b8">
+Осталось: 83 954 PLN
+</div>
+
+</div>
+
+</div>
+
+<div class="grid-bottom">
+
+<div class="panel">
+
+<div class="panel-title">
+📈 Инвестиции
+</div>
+
+<div class="list-row">
+<span>Акции</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Криптовалюта</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Портфель</span>
+<span>0 PLN</span>
+</div>
+
+<div class="list-row">
+<span>Доходность</span>
+<span>0%</span>
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+📊 Cash Flow
+</div>
+
+<div class="big-number green">
++16 046
+</div>
+
+<div style="margin-top:20px;color:#94a3b8;">
+Положительный денежный поток
+</div>
+
+</div>
+
+<div class="panel">
+
+<div class="panel-title">
+📅 Последние операции
+</div>
+
+<table class="table">
+
+<tr>
+<th>Категория</th>
+<th>Сумма</th>
+</tr>
+
+<tr>
+<td>Квартира</td>
+<td>3043</td>
+</tr>
+
+<tr>
+<td>Подарки</td>
+<td>2050</td>
+</tr>
+
+<tr>
+<td>Маме</td>
+<td>2000</td>
+</tr>
+
+<tr>
+<td>Бедренка</td>
+<td>1270</td>
+</tr>
+
+</table>
 
 </div>
 
 </div>
+
+<canvas id="balanceChart" style="display:none;"></canvas>
 
 </div>
 
@@ -278,59 +666,98 @@ grid-template-columns:1fr;
 
 <script>
 
-new Chart(
-document.getElementById('incomeChart'),
-{
+const incomeChart = document.getElementById('incomeChart');
+
+new Chart(incomeChart,{
+
 type:'line',
+
 data:{
-labels:['Янв','Фев','Мар','Апр','Май','Июн'],
+
+labels:[
+'Янв',
+'Фев',
+'Мар',
+'Апр',
+'Май',
+'Июн'
+],
+
 datasets:[
+
 {
 label:'Доходы',
-data:[8000,12000,9000,18000,15000,25383],
+
+data:[
+3000,
+5000,
+8000,
+12000,
+18000,
+25383
+],
+
 borderColor:'#22c55e',
-backgroundColor:'rgba(34,197,94,.2)',
+backgroundColor:'rgba(34,197,94,.15)',
+fill:true,
 tension:.4
 },
+
 {
 label:'Расходы',
-data:[4000,5000,7000,6000,8000,9337],
+
+data:[
+1000,
+2000,
+3000,
+5000,
+7000,
+9337
+],
+
 borderColor:'#ef4444',
-backgroundColor:'rgba(239,68,68,.2)',
+backgroundColor:'rgba(239,68,68,.15)',
+fill:true,
 tension:.4
 }
-]
-}
-}
-);
 
-new Chart(
-document.getElementById('expenseChart'),
-{
-type:'doughnut',
-data:{
-labels:[
-'Квартира',
-'Подарки',
-'Маме',
-'Бедренка'
-],
-datasets:[
-{
-data:[3043,2050,2000,1270],
-backgroundColor:[
-'#3b82f6',
-'#22c55e',
-'#f59e0b',
-'#a855f7'
 ]
-}
-]
-}
-}
-);
 
-</script>
+},
 
-</body>
-</html>
+options:{
+
+responsive:true,
+
+plugins:{
+legend:{
+labels:{
+color:'#ffffff'
+}
+}
+},
+
+scales:{
+x:{
+ticks:{
+color:'#94a3b8'
+},
+grid:{
+color:'rgba(255,255,255,.05)'
+}
+},
+y:{
+ticks:{
+color:'#94a3b8'
+},
+grid:{
+color:'rgba(255,255,255,.05)'
+}
+}
+}
+
+}
+
+});
+
+new Chart
