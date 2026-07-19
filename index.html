@@ -664,11 +664,106 @@ USD
 
 </div>
 
+
 <script>
+window.addEventListener("load", function () {
 
-const incomeChart = document.getElementById('incomeChart');
+  const incomeCanvas = document.getElementById("incomeChart");
+  const expenseCanvas = document.getElementById("expenseChart");
 
-new Chart(incomeChart,{
+  if (typeof Chart === "undefined") {
+    console.error("Chart.js не загрузился");
+    return;
+  }
+
+  if (incomeCanvas) {
+    new Chart(incomeCanvas, {
+      type: "line",
+      data: {
+        labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+        datasets: [
+          {
+            label: "Доходы",
+            data: [3000, 5000, 8000, 12000, 18000, 25383],
+            borderColor: "#22c55e",
+            backgroundColor: "rgba(34,197,94,0.18)",
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: "Расходы",
+            data: [1000, 2000, 3000, 5000, 7000, 9337],
+            borderColor: "#ef4444",
+            backgroundColor: "rgba(239,68,68,0.18)",
+            fill: true,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: "#ffffff"
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: "#94a3b8"
+            },
+            grid: {
+              color: "rgba(255,255,255,0.06)"
+            }
+          },
+          y: {
+            ticks: {
+              color: "#94a3b8"
+            },
+            grid: {
+              color: "rgba(255,255,255,0.06)"
+            }
+          }
+        }
+      }
+    });
+  }
+
+  if (expenseCanvas) {
+    new Chart(expenseCanvas, {
+      type: "doughnut",
+      data: {
+        labels: [
+          "Квартира",
+          "Подарки",
+          "Маме",
+          "Бедренка",
+          "Интернет",
+          "Зал"
+        ],
+        datasets: [
+          {
+            data: [3043, 2050, 2000, 1270, 50, 50],
+            backgroundColor: [
+              "#3b82f6",
+              "#22c55e",
+              "#f59e0b",
+              "#a855f7",
+              "#06b6d4",
+              "#ef4444"
+            ],
+            borderWidth: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
 
 type:'line',
 
