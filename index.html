@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -11,6 +10,7 @@
   --bg: #0b1220;
   --sidebar: #111827;
   --card: #1e293b;
+  --card-dark: #0f172a;
   --green: #22c55e;
   --red: #ef4444;
   --blue: #3b82f6;
@@ -28,7 +28,7 @@
 
 body {
   background: var(--bg);
-  color: white;
+  color: #fff;
 }
 
 .layout {
@@ -45,13 +45,13 @@ body {
 
 .logo {
   font-size: 28px;
-  font-weight: 800;
-  color: var(--green);
+  font-weight: 900;
   margin-bottom: 34px;
+  color: var(--green);
 }
 
 .logo span {
-  color: white;
+  color: #fff;
 }
 
 .menu {
@@ -64,7 +64,7 @@ body {
   background: #1e293b;
   padding: 16px;
   border-radius: 14px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .main {
@@ -76,11 +76,12 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 20px;
 }
 
 .title {
   font-size: 30px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .subtitle {
@@ -91,15 +92,16 @@ body {
 .actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .btn {
   border: none;
   border-radius: 12px;
   background: #1e293b;
-  color: white;
+  color: #fff;
   padding: 13px 18px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .btn-primary {
@@ -112,7 +114,11 @@ body {
   gap: 16px;
 }
 
-.card {
+.card,
+.panel,
+.mini-card,
+.form-box,
+.history-box {
   background: linear-gradient(145deg, #1e293b, #111827);
   border-radius: 22px;
   padding: 24px;
@@ -149,17 +155,9 @@ body {
   margin-top: 22px;
 }
 
-.panel,
-.mini-card {
-  background: #1e293b;
-  border-radius: 22px;
-  padding: 24px;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.2);
-}
-
 .panel-title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 900;
   margin-bottom: 18px;
 }
 
@@ -219,12 +217,12 @@ body {
 .forecast-number {
   font-size: 38px;
   font-weight: 900;
-  color: #3b82f6;
+  color: var(--blue);
   margin-top: 20px;
 }
 
 .forecast-text {
-  color: #94a3b8;
+  color: var(--muted);
   margin-top: 10px;
   line-height: 1.5;
 }
@@ -259,7 +257,7 @@ body {
   gap: 12px;
   margin-top: 16px;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--muted);
 }
 
 .legend-dot {
@@ -270,37 +268,11 @@ body {
   margin-right: 6px;
 }
 
-@media (max-width: 1200px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .kpi-grid,
-  .grid-main,
-  .grid-bottom,
-  .extra-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .actions {
-    flex-wrap: wrap;
-  }
-}
-</style>
-
-operations-grid {
+.operations-grid {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
   gap: 18px;
   margin-top: 22px;
-}
-
-.form-box,
-.history-box {
-  background: #1e293b;
-  border-radius: 22px;
-  padding: 24px;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.2);
 }
 
 .form-grid {
@@ -316,7 +288,7 @@ operations-grid {
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.08);
   background: #0f172a;
-  color: white;
+  color: #fff;
   outline: none;
 }
 
@@ -328,24 +300,25 @@ operations-grid {
   display: flex;
   gap: 12px;
   margin-top: 14px;
+  flex-wrap: wrap;
 }
 
 .form-btn {
   padding: 13px 18px;
   border: none;
   border-radius: 12px;
-  background: #3b82f6;
+  background: var(--blue);
   color: white;
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
 }
 
-.form-btn-danger {
-  background: #ef4444;
+.form-btn-green {
+  background: var(--green);
 }
 
-.form-btn-green {
-  background: #22c55e;
+.form-btn-danger {
+  background: var(--red);
 }
 
 .operation-table {
@@ -362,30 +335,39 @@ operations-grid {
 }
 
 .operation-table th {
-  color: #94a3b8;
+  color: var(--muted);
   font-size: 13px;
 }
 
 .badge-income {
-  color: #22c55e;
-  font-weight: 800;
+  color: var(--green);
+  font-weight: 900;
 }
 
 .badge-expense {
-  color: #ef4444;
-  font-weight: 800;
+  color: var(--red);
+  font-weight: 900;
 }
 
-@media(max-width:1200px) {
-  .operations-grid {
+canvas {
+  display: block;
+}
+
+@media (max-width: 1200px) {
+  .layout {
     grid-template-columns: 1fr;
   }
 
+  .kpi-grid,
+  .grid-main,
+  .grid-bottom,
+  .extra-grid,
+  .operations-grid,
   .form-grid {
     grid-template-columns: 1fr;
   }
 }
-
+</style>
 </head>
 
 <body>
@@ -426,31 +408,31 @@ operations-grid {
     <section class="kpi-grid">
       <div class="card">
         <div class="card-label">Общий доход</div>
-        <div class="card-value green">25 383</div>
+        <div id="kpiIncome" class="card-value green">25 383</div>
         <div class="card-note">▲ +12.4% к прошлому месяцу</div>
       </div>
 
       <div class="card">
         <div class="card-label">Общие расходы</div>
-        <div class="card-value red">9 337</div>
+        <div id="kpiExpense" class="card-value red">9 337</div>
         <div class="card-note">▼ -2.7% к прошлому месяцу</div>
       </div>
 
       <div class="card">
         <div class="card-label">Баланс</div>
-        <div class="card-value blue">16 046</div>
+        <div id="kpiBalance" class="card-value blue">16 046</div>
         <div class="card-note">Текущий остаток</div>
       </div>
 
       <div class="card">
         <div class="card-label">Накопления</div>
-        <div class="card-value yellow">63%</div>
+        <div id="kpiSavings" class="card-value yellow">63%</div>
         <div class="card-note">От дохода</div>
       </div>
 
       <div class="card">
         <div class="card-label">Финансовая цель</div>
-        <div class="card-value purple">16%</div>
+        <div id="kpiGoal" class="card-value purple">16%</div>
         <div class="card-note">16 046 / 100 000</div>
       </div>
     </section>
@@ -563,99 +545,93 @@ operations-grid {
       </div>
     </section>
 
+    <section class="operations-grid">
+      <div class="form-box">
+        <div class="panel-title">➕ Добавить операцию</div>
+
+        <div class="form-grid">
+          <input id="opName" class="form-input" placeholder="Название операции">
+          <input id="opAmount" class="form-input" type="number" placeholder="Сумма">
+
+          <select id="opType" class="form-select">
+            <option value="Доход">Доход</option>
+            <option value="Расход">Расход</option>
+          </select>
+
+          <select id="opCurrency" class="form-select">
+            <option value="PLN">PLN</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="CRYPTO">Crypto</option>
+            <option value="STOCKS">Stocks</option>
+          </select>
+
+          <select id="opCategory" class="form-select">
+            <option value="Зарплата">Зарплата</option>
+            <option value="Бизнес">Бизнес</option>
+            <option value="Инвестиции">Инвестиции</option>
+            <option value="Крипта">Крипта</option>
+            <option value="Акции">Акции</option>
+            <option value="Еда">Еда</option>
+            <option value="Жилье">Жилье</option>
+            <option value="Авто">Авто</option>
+            <option value="Топливо">Топливо</option>
+            <option value="Путешествия">Путешествия</option>
+            <option value="Кафе">Кафе</option>
+            <option value="Подписки">Подписки</option>
+            <option value="Одежда">Одежда</option>
+            <option value="Здоровье">Здоровье</option>
+            <option value="Подарки">Подарки</option>
+            <option value="Развлечения">Развлечения</option>
+            <option value="Прочее">Прочее</option>
+          </select>
+
+          <input id="opDate" class="form-input" type="date">
+        </div>
+
+        <div class="form-actions">
+          <button class="form-btn form-btn-green" onclick="addOperation()">Добавить</button>
+          <button class="form-btn" onclick="exportOperations()">Экспорт CSV</button>
+          <button class="form-btn form-btn-danger" onclick="clearOperations()">Очистить</button>
+        </div>
+      </div>
+
+      <div class="history-box">
+        <div class="panel-title">📋 Журнал операций</div>
+
+        <table class="operation-table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Тип</th>
+              <th>Категория</th>
+              <th>Название</th>
+              <th>Сумма</th>
+            </tr>
+          </thead>
+          <tbody id="operationsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
-  
-<section class="operations-grid" id="operationFormPanel">
-
-  <div class="form-box">
-    <div class="panel-title">➕ Добавить операцию</div>
-
-    <div class="form-grid">
-
-      <input id="opName" class="form-input" placeholder="Название операции">
-
-      <input id="opAmount" class="form-input" type="number" placeholder="Сумма">
-
-      <select id="opType" class="form-select">
-        <option value="Доход">Доход</option>
-        <option value="Расход">Расход</option>
-      </select>
-
-      <select id="opCurrency" class="form-select">
-        <option value="PLN">PLN</option>
-        <option value="EUR">EUR</option>
-        <option value="USD">USD</option>
-        <option value="CRYPTO">Crypto</option>
-        <option value="STOCKS">Stocks</option>
-      </select>
-
-      <select id="opCategory" class="form-select">
-        <option value="Зарплата">Зарплата</option>
-        <option value="Бизнес">Бизнес</option>
-        <option value="Инвестиции">Инвестиции</option>
-        <option value="Крипта">Крипта</option>
-        <option value="Акции">Акции</option>
-        <option value="Еда">Еда</option>
-        <option value="Жилье">Жилье</option>
-        <option value="Авто">Авто</option>
-        <option value="Топливо">Топливо</option>
-        <option value="Путешествия">Путешествия</option>
-        <option value="Кафе">Кафе</option>
-        <option value="Подписки">Подписки</option>
-        <option value="Одежда">Одежда</option>
-        <option value="Здоровье">Здоровье</option>
-        <option value="Подарки">Подарки</option>
-        <option value="Развлечения">Развлечения</option>
-        <option value="Прочее">Прочее</option>
-      </select>
-
-      <input id="opDate" class="form-input" type="date">
-
-    </div>
-
-    <div class="form-actions">
-      <button class="form-btn form-btn-green" onclick="addOperation()">Добавить</button>
-      <button class="form-btn" onclick="exportOperations()">Экспорт CSV</button>
-      <button class="form-btn form-btn-danger" onclick="clearOperations()">Очистить</button>
-    </div>
-  </div>
-
-  <div class="history-box">
-    <div class="panel-title">📋 Журнал операций</div>
-
-    <table class="operation-table">
-      <thead>
-        <tr>
-          <th>Дата</th>
-          <th>Тип</th>
-          <th>Категория</th>
-          <th>Название</th>
-          <th>Сумма</th>
-        </tr>
-      </thead>
-
-      <tbody id="operationsBody">
-      </tbody>
-    </table>
-  </div>
-
-</section>
-
 </div>
 
 <script>
+let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
-window.onload = function () {
+window.addEventListener("load", function () {
   drawIncomeChart();
   drawExpenseChart();
   drawCashFlowChart();
-};
+  renderOperations();
+});
 
-window.onresize = function () {
+window.addEventListener("resize", function () {
   drawIncomeChart();
   drawExpenseChart();
   drawCashFlowChart();
-};
+});
 
 function prepareCanvas(id, fixedHeight) {
   const canvas = document.getElementById(id);
@@ -894,7 +870,6 @@ function drawCashFlowChart() {
   });
 
   ctx.textAlign = "left";
-
   ctx.fillStyle = "#22c55e";
   ctx.font = "14px Segoe UI";
   ctx.fillText("Приток", padding, 22);
@@ -914,9 +889,6 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
-</script>
-
-let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
 function addOperation() {
   const name = document.getElementById("opName").value.trim();
@@ -942,7 +914,6 @@ function addOperation() {
   };
 
   operations.unshift(operation);
-
   localStorage.setItem("financeOperations", JSON.stringify(operations));
 
   document.getElementById("opName").value = "";
@@ -985,7 +956,6 @@ function clearOperations() {
 
   operations = [];
   localStorage.removeItem("financeOperations");
-
   renderOperations();
 }
 
@@ -1011,75 +981,7 @@ function exportOperations() {
 
   URL.revokeObjectURL(url);
 }
-
-renderOperations();
-
-<script>
-
-function renderOperations() {
-  const tbody = document.getElementById("operationsBody");
-  if (!tbody) return;
-
-  if (operations.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="color:#94a3b8;">Пока нет добавленных операций</td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = operations.slice(0, 20).map(function(op) {
-    const typeClass = op.type === "Доход" ? "badge-income" : "badge-expense";
-    const sign = op.type === "Доход" ? "+" : "-";
-
-    return `
-      <tr>
-        <td>${op.date}</td>
-        <td class="${typeClass}">${op.type}</td>
-        <td>${op.category}</td>
-        <td>${op.name}</td>
-        <td>${sign}${op.amount.toLocaleString("ru-RU")} ${op.currency}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-function clearOperations() {
-  if (!confirm("Удалить все добавленные операции?")) return;
-
-  operations = [];
-  localStorage.removeItem("financeOperations");
-
-  renderOperations();
-}
-
-function exportOperations() {
-  if (operations.length === 0) {
-    alert("Нет операций для экспорта");
-    return;
-  }
-
-  let csv = "Дата,Тип,Категория,Название,Сумма,Валюта\n";
-
-  operations.forEach(function(op) {
-    csv += `${op.date},${op.type},${op.category},${op.name},${op.amount},${op.currency}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "finance-operations.csv";
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-renderOperations();
 </script>
 
 </body>
-
 </html>
