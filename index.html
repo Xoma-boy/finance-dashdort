@@ -1014,6 +1014,72 @@ function exportOperations() {
 
 renderOperations();
 
+<script>
+
+function renderOperations() {
+  const tbody = document.getElementById("operationsBody");
+  if (!tbody) return;
+
+  if (operations.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="color:#94a3b8;">Пока нет добавленных операций</td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = operations.slice(0, 20).map(function(op) {
+    const typeClass = op.type === "Доход" ? "badge-income" : "badge-expense";
+    const sign = op.type === "Доход" ? "+" : "-";
+
+    return `
+      <tr>
+        <td>${op.date}</td>
+        <td class="${typeClass}">${op.type}</td>
+        <td>${op.category}</td>
+        <td>${op.name}</td>
+        <td>${sign}${op.amount.toLocaleString("ru-RU")} ${op.currency}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function clearOperations() {
+  if (!confirm("Удалить все добавленные операции?")) return;
+
+  operations = [];
+  localStorage.removeItem("financeOperations");
+
+  renderOperations();
+}
+
+function exportOperations() {
+  if (operations.length === 0) {
+    alert("Нет операций для экспорта");
+    return;
+  }
+
+  let csv = "Дата,Тип,Категория,Название,Сумма,Валюта\n";
+
+  operations.forEach(function(op) {
+    csv += `${op.date},${op.type},${op.category},${op.name},${op.amount},${op.currency}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "finance-operations.csv";
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+renderOperations();
+</script>
+
 </body>
 
 </html>
