@@ -1,11 +1,35 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finance Dashboard Pro</title>
+    <meta charset="UTF-8">
+    <title>Finance Dashboard</title>
 
-.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    /chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <canvas id="expenseStructureChart"></canvas>
+
+    <script>
+        console.log(Chart);
+
+        new Chart(
+            document.getElementById('expenseStructureChart'),
+            {
+                type: 'polarArea',
+                data: {
+                    labels: ['Квартира', 'Подарки', 'Еда'],
+                    datasets: [{
+                        data: [3043, 2050, 1600]
+                    }]
+                }
+            }
+        );
+    </script>
+
+</body>
+</html>
+
 
 <style>
 :root {
