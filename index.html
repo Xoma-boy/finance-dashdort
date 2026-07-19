@@ -428,278 +428,203 @@ body {
 
 </div>
 
+
 <script>
-window.addEventListener("load", function () {
-  if (typeof Chart === "undefined") {
-    console.error("Chart.js не загрузился");
-    return;
+window.onload = function () {
+  drawIncomeChart();
+  drawExpenseChart();
+};
+
+window.onresize = function () {
+  drawIncomeChart();
+  drawExpenseChart();
+};
+
+function prepareCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+
+  const parent = canvas.parentElement;
+  const width = parent.clientWidth || 800;
+  const height = 320;
+
+  canvas.width = width;
+  canvas.height = height;
+
+  canvas.style.width = "100%";
+  canvas.style.height = height + "px";
+  canvas.style.display = "block";
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+
+  return { canvas, ctx, width, height };
+}
+
+function drawIncomeChart() {
+  const chart = prepareCanvas("incomeChart");
+  if (!chart) return;
+
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
+
+  const padding = 45;
+
+  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+  const income = [3000, 5000, 8000, 12000, 18000, 25383];
+  const expense = [1000, 2000, 3000, 5000, 7000, 9337];
+
+  const maxValue = 26000;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 5; i++) {
+    const y = padding + ((height - padding * 2) / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
   }
 
-  const incomeCanvas = document.getElementById("incomeChart");
-  const expenseCanvas = document.getElementById("expenseChart");
+  function getX(index) {
+    return padding + ((width - padding * 2) / (labels.length - 1)) * index;
+  }
 
-  new Chart(incomeCanvas, {
-    type: "line",
-    data: {
-      labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-      datasets: [
-        {
-          label: "Доходы",
-          data: [3000, 5000, 8000, 12000, 18000, 25383],
-          borderColor: "#22c55e",
-          backgroundColor: "rgba(34,197,94,0.18)",
-          fill: true,
-          tension: 0.4
-        },
-        {
-          label: "Расходы",
-          data: [1000, 2000, 3000, 5000, 7000, 9337],
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.18)",
-          fill: true,
-          tension: 0.4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: "#ffffff"
-          }
-        }
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: "#94a3b8"
-          },
-          grid: {
-            color: "rgba(255,255,255,0.06)"
-          }
-        },
-        y: {
-          ticks: {
-            color: "#94a3b8"
-          },
-          grid: {
-            color: "rgba(255,255,255,0.06)"
-          }
-        }
+  function getY(value) {
+    return height - padding - (value / maxValue) * (height - padding * 2);
+  }
+
+  function drawLine(data, color, fillColor) {
+    ctx.beginPath();
+
+    data.forEach(function (value, index) {
+      const x = getX(index);
+      const y = getY(value);
+
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
       }
-    }
+    });
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.lineTo(getX(data.length - 1), height - padding);
+    ctx.lineTo(getX(0), height - padding);
+    ctx.closePath();
+
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    data.forEach(function (value, index) {
+      const x = getX(index);
+      const y = getY(value);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(income, "#22c55e", "rgba(34,197,94,0.14)");
+  drawLine(expense, "#ef4444", "rgba(239,68,68,0.14)");
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "13px Segoe UI";
+
+  labels.forEach(function (label, index) {
+    ctx.fillText(label, getX(index) - 12, height - 15);
   });
 
-  
+  ctx.fillStyle = "#22c55e";
+  ctx.font = "14px Segoe UI";
+  ctx.fillText("Доходы", padding, 24);
 
-<script>
-window.addEventListener("load", function () {
+  ctx.fillStyle = "#ef4444";
+  ctx.fillText("Расходы", padding + 90, 24);
+}
 
-  function setupCanvas(canvas) {
-    const parent = canvas.parentElement;
-    const dpr = window.devicePixelRatio || 1;
+function drawExpenseChart() {
+  const chart = prepareCanvas("expenseChart");
+  if (!chart) return;
 
-    const width = parent.clientWidth;
-    const height = parent.clientHeight || 320;
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
 
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
 
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
+  const data = [
+    { label: "Квартира", value: 3043, color: "#3b82f6" },
+    { label: "Подарки", value: 2050, color: "#22c55e" },
+    { label: "Маме", value: 2000, color: "#f59e0b" },
+    { label: "Бедренка", value: 1270, color: "#a855f7" },
+    { label: "Интернет", value: 50, color: "#06b6d4" },
+    { label: "Зал", value: 50, color: "#ef4444" }
+  ];
 
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const total = data.reduce(function (sum, item) {
+    return sum + item.value;
+  }, 0);
 
-    return { ctx, width, height };
-  }
+  const centerX = width / 2;
+  const centerY = 140;
+  const radius = 95;
+  const innerRadius = 55;
 
-  function drawLineChart() {
-    const canvas = document.getElementById("incomeChart");
-    if (!canvas) return;
+  let startAngle = -Math.PI / 2;
 
-    const chart = setupCanvas(canvas);
-    const ctx = chart.ctx;
-    const width = chart.width;
-    const height = chart.height;
+  data.forEach(function (item) {
+    const slice = (item.value / total) * Math.PI * 2;
+    const endAngle = startAngle + slice;
 
-    const padding = 45;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+    ctx.closePath();
 
-    const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+    ctx.fillStyle = item.color;
+    ctx.fill();
 
-    const income = [3000, 5000, 8000, 12000, 18000, 25383];
-    const expense = [1000, 2000, 3000, 5000, 7000, 9337];
+    startAngle = endAngle;
+  });
 
-    const maxValue = 26000;
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.fillText(total.toLocaleString("ru-RU"), centerX, centerY - 4);
 
-    ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "13px Segoe UI";
+  ctx.fillText("PLN расходы", centerX, centerY + 20);
 
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
-    ctx.lineWidth = 1;
+  ctx.textAlign = "left";
+  ctx.font = "13px Segoe UI";
 
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + ((height - padding * 2) / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
+  let legendY = 255;
 
-    function getX(index) {
-      return padding + ((width - padding * 2) / (labels.length - 1)) * index;
-    }
+  data.slice(0, 4).forEach(function (item, index) {
+    const x = 30 + (index % 2) * 150;
+    const y = legendY + Math.floor(index / 2) * 28;
 
-    function getY(value) {
-      return height - padding - (value / maxValue) * (height - padding * 2);
-    }
-
-    function drawDataset(data, color, fillColor) {
-      ctx.beginPath();
-
-      data.forEach(function (value, index) {
-        const x = getX(index);
-        const y = getY(value);
-
-        if (index === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      ctx.lineTo(getX(data.length - 1), height - padding);
-      ctx.lineTo(getX(0), height - padding);
-      ctx.closePath();
-
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-
-      data.forEach(function (value, index) {
-        const x = getX(index);
-        const y = getY(value);
-
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      });
-    }
-
-    drawDataset(
-      income,
-      "#22c55e",
-      "rgba(34,197,94,0.15)"
-    );
-
-    drawDataset(
-      expense,
-      "#ef4444",
-      "rgba(239,68,68,0.15)"
-    );
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Segoe UI";
-
-    labels.forEach(function (label, index) {
-      const x = getX(index);
-      ctx.fillText(label, x - 12, height - 15);
-    });
-
-    ctx.fillStyle = "#22c55e";
-    ctx.font = "14px Segoe UI";
-    ctx.fillText("Доходы", padding, 22);
-
-    ctx.fillStyle = "#ef4444";
-    ctx.fillText("Расходы", padding + 90, 22);
-  }
-
-  function drawDoughnutChart() {
-    const canvas = document.getElementById("expenseChart");
-    if (!canvas) return;
-
-    const chart = setupCanvas(canvas);
-    const ctx = chart.ctx;
-    const width = chart.width;
-    const height = chart.height;
-
-    ctx.clearRect(0, 0, width, height);
-
-    const data = [
-      { label: "Квартира", value: 3043, color: "#3b82f6" },
-      { label: "Подарки", value: 2050, color: "#22c55e" },
-      { label: "Маме", value: 2000, color: "#f59e0b" },
-      { label: "Бедренка", value: 1270, color: "#a855f7" },
-      { label: "Интернет", value: 50, color: "#06b6d4" },
-      { label: "Зал", value: 50, color: "#ef4444" }
-    ];
-
-    const total = data.reduce(function (sum, item) {
-      return sum + item.value;
-    }, 0);
-
-    const centerX = width / 2;
-    const centerY = height / 2 - 20;
-    const radius = Math.min(width, height) / 3;
-    const innerRadius = radius * 0.58;
-
-    let startAngle = -Math.PI / 2;
-
-    data.forEach(function (item) {
-      const sliceAngle = (item.value / total) * Math.PI * 2;
-      const endAngle = startAngle + sliceAngle;
-
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-      ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-      ctx.closePath();
-
-      ctx.fillStyle = item.color;
-      ctx.fill();
-
-      startAngle = endAngle;
-    });
+    ctx.fillStyle = item.color;
+    ctx.fillRect(x, y, 12, 12);
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 24px Segoe UI";
-    ctx.textAlign = "center";
-    ctx.fillText(total.toLocaleString("ru-RU"), centerX, centerY - 5);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Segoe UI";
-    ctx.fillText("PLN расходы", centerX, centerY + 18);
-
-    ctx.textAlign = "left";
-    ctx.font = "13px Segoe UI";
-
-    let legendY = height - 85;
-
-    data.slice(0, 4).forEach(function (item, index) {
-      const x = 20 + (index % 2) * 150;
-      const y = legendY + Math.floor(index / 2) * 28;
-
-      ctx.fillStyle = item.color;
-      ctx.fillRect(x, y, 12, 12);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(item.label, x + 20, y + 11);
-    });
-  }
-
-  drawLineChart();
-  drawDoughnutChart();
-
-  window.addEventListener("resize", function () {
-    drawLineChart();
-    drawDoughnutChart();
+    ctx.fillText(item.label, x + 20, y + 11);
   });
+}
 
-});
 </script>
 
 
