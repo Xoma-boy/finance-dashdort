@@ -781,4 +781,103 @@ function drawExpenseChart() {
 
 
 </body>
+
+<script>
+window.addEventListener("load", function () {
+  drawCashFlowChart();
+});
+
+window.addEventListener("resize", function () {
+  drawCashFlowChart();
+});
+
+function drawCashFlowChart() {
+  const canvas = document.getElementById("cashFlowChart");
+  if (!canvas) return;
+
+  const parent = canvas.parentElement;
+  const width = parent.clientWidth || 600;
+  const height = 300;
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = "100%";
+  canvas.style.height = height + "px";
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = 45;
+
+  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+
+  const inflow = [3000, 5000, 8000, 12000, 18000, 25383];
+  const outflow = [1000, 2000, 3000, 5000, 7000, 9337];
+
+  const maxValue = 26000;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 5; i++) {
+    const y = padding + ((height - padding * 2) / 5) * i;
+
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+  }
+
+  const barWidth = 24;
+  const groupGap = (width - padding * 2) / labels.length;
+
+  labels.forEach(function (label, index) {
+    const baseX = padding + groupGap * index + groupGap / 2;
+    const incomeHeight = (inflow[index] / maxValue) * (height - padding * 2);
+    const expenseHeight = (outflow[index] / maxValue) * (height - padding * 2);
+
+    const incomeY = height - padding - incomeHeight;
+    const expenseY = height - padding - expenseHeight;
+
+    ctx.fillStyle = "#22c55e";
+    roundRect(ctx, baseX - barWidth - 3, incomeY, barWidth, incomeHeight, 6);
+    ctx.fill();
+
+    ctx.fillStyle = "#ef4444";
+    roundRect(ctx, baseX + 3, expenseY, barWidth, expenseHeight, 6);
+    ctx.fill();
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "13px Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillText(label, baseX, height - 14);
+  });
+
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = "#22c55e";
+  ctx.font = "14px Segoe UI";
+  ctx.fillText("Приток", padding, 22);
+
+  ctx.fillStyle = "#ef4444";
+  ctx.fillText("Отток", padding + 85, 22);
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+</script>
+
 </html>
