@@ -217,6 +217,89 @@ body {
   }
 }
 </style>
+
+.extra-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.mini-card {
+  background: #1e293b;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.2);
+}
+
+.cashflow-box,
+.forecast-box,
+.calendar-box {
+  height: 300px;
+  position: relative;
+}
+
+.forecast-number {
+  font-size: 38px;
+  font-weight: 900;
+  color: #3b82f6;
+  margin-top: 20px;
+}
+
+.forecast-text {
+  color: #94a3b8;
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.day-cell {
+  height: 28px;
+  border-radius: 7px;
+  background: #334155;
+}
+
+.day-low {
+  background: rgba(34,197,94,0.35);
+}
+
+.day-mid {
+  background: rgba(251,191,36,0.65);
+}
+
+.day-high {
+  background: rgba(239,68,68,0.75);
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+@media(max-width:1200px) {
+  .extra-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -425,6 +508,75 @@ body {
     </section>
 
   </main>
+
+<section class="extra-grid">
+
+  <div class="mini-card">
+    <div class="panel-title">📊 Cash Flow</div>
+    <div class="cashflow-box">
+      <canvas id="cashFlowChart"></canvas>
+    </div>
+  </div>
+
+  <div class="mini-card">
+    <div class="panel-title">🔮 Прогноз баланса</div>
+
+    <div class="forecast-number">
+      32 092 PLN
+    </div>
+
+    <div class="forecast-text">
+      Если текущий темп сохранится, через 1 месяц баланс может увеличиться примерно в 2 раза.
+      <br><br>
+      Средний чистый поток: <b>+16 046 PLN</b>
+    </div>
+  </div>
+
+  <div class="mini-card">
+    <div class="panel-title">📅 Календарь трат</div>
+
+    <div class="calendar-grid">
+      <div class="day-cell day-low"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-mid"></div>
+      <div class="day-cell day-high"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-low"></div>
+      <div class="day-cell"></div>
+
+      <div class="day-cell"></div>
+      <div class="day-cell day-high"></div>
+      <div class="day-cell day-mid"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-low"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell"></div>
+
+      <div class="day-cell day-low"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-mid"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-high"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-low"></div>
+
+      <div class="day-cell"></div>
+      <div class="day-cell day-mid"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-low"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell"></div>
+      <div class="day-cell day-high"></div>
+    </div>
+
+    <div class="calendar-legend">
+      <span><span class="legend-dot" style="background:#22c55e;"></span>мало</span>
+      <span><span class="legend-dot" style="background:#fbbf24;"></span>средне</span>
+      <span><span class="legend-dot" style="background:#ef4444;"></span>много</span>
+    </div>
+  </div>
+
+</section>
 
 </div>
 
