@@ -916,7 +916,7 @@ function roundRect(ctx, x, y, width, height, radius) {
 }
 </script>
 
-et operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
 function addOperation() {
   const name = document.getElementById("opName").value.trim();
