@@ -619,6 +619,158 @@ canvas {
 </div>
 
 <script>
+/* ===============================
+   PERIOD FILTER: DAY / MONTH / YEAR / CUSTOM
+================================ */
+
+function getTodayISO() {
+  const now = new Date();
+
+  return (
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0")
+  );
+}
+
+function getCurrentMonthISO() {
+  const now = new Date();
+
+  return (
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0")
+  );
+}
+
+function getCurrentYearISO() {
+  return String(new Date().getFullYear());
+}
+
+function getPeriodMode() {
+  return localStorage.getItem("financePeriodMode") || "month";
+}
+
+function setPeriodMode(value) {
+  localStorage.setItem("financePeriodMode", value);
+}
+
+function initMonthFilter() {
+  const actions = document.querySelector(".actions");
+
+  if (!actions) return;
+
+  const oldMonthFilter = document.getElementById("monthFilter");
+
+  if (oldMonthFilter) {
+    oldMonthFilter.remove();
+  }
+
+  if (document.getElementById("periodFilterBox")) return;
+
+  const box = document.createElement("div");
+  box.id = "periodFilterBox";
+
+  box.style.display = "flex";
+  box.style.gap = "10px";
+  box.style.flexWrap = "wrap";
+  box.style.alignItems = "center";
+
+  box.innerHTML = `
+    <select id="periodMode" style="
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+      cursor:pointer;
+    ">
+      <option value="all">Все данные</option>
+      <option value="day">День</option>
+      <option value="month">Месяц</option>
+      <option value="year">Год</option>
+      <option value="custom">Свой период</option>
+    </select>
+
+    <input id="periodDay" type="date" style="
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+    ">
+
+    <input id="periodMonth" type="month" style="
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+    ">
+
+    <input id="periodYear" type="number" placeholder="Год" style="
+      width:100px;
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+    ">
+
+    <input id="periodStart" type="date" style="
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+    ">
+
+    <input id="periodEnd" type="date" style="
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      padding:13px 18px;
+      font-weight:800;
+    ">
+
+    <button onclick="applyPeriodFilter()" style="
+      border:none;
+      border-radius:12px;
+      background:#22c55e;
+      color:white;
+      padding:13px 18px;
+      font-weight:900;
+      cursor:pointer;
+    ">
+      Применить
+    </button>
+  `;
+
+  actions.prepend(box);
+
+  document.getElementById("periodMode").value =
+    localStorage.getItem("financePeriodMode") || "month";
+
+  document.getElementById("periodDay").value =
+    localStorage.getItem("financePeriodDay") || getTodayISO();
+
+  document.getElementById("periodMonth").value =
+    localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+
+  document.getElementById("periodYear").value =
+    localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+
+  document.getElementById("periodStart").value =
+    localStorage
+
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
 const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
