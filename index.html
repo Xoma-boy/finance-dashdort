@@ -619,9 +619,53 @@ canvas {
 </div>
 
 <script>
-/* ===============================
-   PERIOD FILTER: DAY / MONTH / YEAR / CUSTOM
-================================ */
+/* =========================
+   STORAGE / BASIC SETTINGS
+========================= */
+
+let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
+const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
+
+function money(value) {
+  return Math.round(Number(value) || 0).toLocaleString("ru-RU");
+}
+
+function getGoalAmount() {
+  return Number(localStorage.getItem("financeGoalAmount")) || 100000;
+}
+
+function getRates() {
+  return {
+    PLN: 1,
+    EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
+    USD: Number(localStorage.getItem("rate_USD")) || 3.9,
+    CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
+    STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
+  };
+}
+
+function convertToPLN(op) {
+  const rates = getRates();
+  const rate = rates[op.currency] || 1;
+
+  return {
+    id: op.id,
+    name: op.name,
+    amount: Number(op.amount) * rate,
+    originalAmount: Number(op.amount),
+    type: op.type,
+    currency: "PLN",
+    originalCurrency: op.currency || "PLN",
+    category: op.category,
+    date: op.date
+  };
+}
+
+/* =========================
+   PERIOD FILTER
+========================= */
 
 function getTodayISO() {
   const now = new Date();
@@ -653,26 +697,17 @@ function getPeriodMode() {
   return localStorage.getItem("financePeriodMode") || "month";
 }
 
-function setPeriodMode(value) {
-  localStorage.setItem("financePeriodMode", value);
-}
-
 function initMonthFilter() {
   const actions = document.querySelector(".actions");
-
   if (!actions) return;
 
   const oldMonthFilter = document.getElementById("monthFilter");
-
-  if (oldMonthFilter) {
-    oldMonthFilter.remove();
-  }
+  if (oldMonthFilter) oldMonthFilter.remove();
 
   if (document.getElementById("periodFilterBox")) return;
 
   const box = document.createElement("div");
   box.id = "periodFilterBox";
-
   box.style.display = "flex";
   box.style.gap = "10px";
   box.style.flexWrap = "wrap";
@@ -714,7 +749,7 @@ function initMonthFilter() {
     ">
 
     <input id="periodYear" type="number" placeholder="Год" style="
-      width:100px;
+      width:110px;
       border:none;
       border-radius:12px;
       background:#1e293b;
@@ -769,56 +804,124 @@ function initMonthFilter() {
     localStorage.getItem("financePeriodYear") || getCurrentYearISO();
 
   document.getElementById("periodStart").value =
-    localStorage
+    localStorage.getItem("financePeriodStart") || getTodayISO();
 
-let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+  document.getElementById("periodEnd").value =
+    localStorage.getItem("financePeriodEnd") || getTodayISO();
 
-const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
-const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
+  document.getElementById("periodMode").addEventListener("change", function() {
+    localStorage.setItem("financePeriodMode", this.value);
+    renderPeriodInputs();
+  });
 
-function money(value) {
-  return Math.round(Number(value) || 0).toLocaleString("ru-RU");
+  renderPeriodInputs();
 }
 
-function getGoalAmount() {
-  return Number(localStorage.getItem("financeGoalAmount")) || 100000;
+function renderPeriodInputs() {
+  const mode = getPeriodMode();
+
+  const day = document.getElementById("periodDay");
+  const month = document.getElementById("periodMonth");
+  const year = document.getElementById("periodYear");
+  const start = document.getElementById("periodStart");
+  const end = document.getElementById("periodEnd");
+
+  if (!day || !month || !year || !start || !end) return;
+
+  day.style.display = mode === "day" ? "block" : "none";
+  month.style.display = mode === "month" ? "block" : "none";
+  year.style.display = mode === "year" ? "block" : "none";
+  start.style.display = mode === "custom" ? "block" : "none";
+  end.style.display = mode === "custom" ? "block" : "none";
 }
 
-function getRates() {
-  return {
-    PLN: 1,
-    EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
-    USD: Number(localStorage.getItem("rate_USD")) || 3.9,
-    CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
-    STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
-  };
+function applyPeriodFilter() {
+  const mode = document.getElementById("periodMode").value;
+
+  localStorage.setItem("financePeriodMode", mode);
+
+  const day = document.getElementById("periodDay").value;
+  const month = document.getElementById("periodMonth").value;
+  const year = document.getElementById("periodYear").value;
+  const start = document.getElementById("periodStart").value;
+  const end = document.getElementById("periodEnd").value;
+
+  if (day) localStorage.setItem("financePeriodDay", day);
+  if (month) localStorage.setItem("financePeriodMonth", month);
+  if (year) localStorage.setItem("financePeriodYear", year);
+  if (start) localStorage.setItem("financePeriodStart", start);
+  if (end) localStorage.setItem("financePeriodEnd", end);
+
+  renderAll();
 }
 
-function convertToPLN(op) {
-  const rates = getRates();
-  const rate = rates[op.currency] || 1;
+function getFilteredOperationsRaw() {
+  const mode = getPeriodMode();
 
-  return {
-    id: op.id,
-    name: op.name,
-    amount: Number(op.amount) * rate,
-    originalAmount: Number(op.amount),
-    type: op.type,
-    currency: "PLN",
-    originalCurrency: op.currency || "PLN",
-    category: op.category,
-    date: op.date
-  };
+  if (mode === "all") {
+    return operations;
+  }
+
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
+
+    return operations.filter(function(op) {
+      return op.date === selectedDay;
+    });
+  }
+
+  if (mode === "month") {
+    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+
+    return operations.filter(function(op) {
+      return op.date && op.date.slice(0, 7) === selectedMonth;
+    });
+  }
+
+  if (mode === "year") {
+    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+
+    return operations.filter(function(op) {
+      return op.date && op.date.slice(0, 4) === selectedYear;
+    });
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+    return operations.filter(function(op) {
+      return op.date && op.date >= start && op.date <= end;
+    });
+  }
+
+  return operations;
+}
+
+function getConvertedPeriodOperations() {
+  return getFilteredOperationsRaw().map(function(op) {
+    return convertToPLN(op);
+  });
 }
 
 function getSelectedMonthKey() {
-  const saved = localStorage.getItem("financeSelectedMonth");
+  const mode = getPeriodMode();
 
-  if (saved) return saved;
+  if (mode === "month") {
+    return localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+  }
 
-  const now = new Date();
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
+    return selectedDay.slice(0, 7);
+  }
 
-  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    return start.slice(0, 7);
+  }
+
+  return getCurrentMonthISO();
 }
 
 function getSelectedMonthDate() {
@@ -828,34 +931,24 @@ function getSelectedMonthDate() {
   return new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
 }
 
-function getMonthOperationsRaw() {
-  const selectedMonth = getSelectedMonthKey();
-
-  return operations.filter(function(op) {
-    return op.date && op.date.slice(0, 7) === selectedMonth;
-  });
-}
-
-function getConvertedMonthOperations() {
-  return getMonthOperationsRaw().map(function(op) {
-    return convertToPLN(op);
-  });
-}
+/* =========================
+   MAIN DATA FUNCTIONS
+========================= */
 
 function getPLNOperations() {
-  return getConvertedMonthOperations();
+  return getConvertedPeriodOperations();
 }
 
 function getOperationsPLN() {
-  return getConvertedMonthOperations();
+  return getConvertedPeriodOperations();
 }
 
 function hasRealOperations() {
-  return getConvertedMonthOperations().length > 0;
+  return getConvertedPeriodOperations().length > 0;
 }
 
 function getTotalIncome() {
-  return getConvertedMonthOperations()
+  return getConvertedPeriodOperations()
     .filter(function(op) {
       return op.type === "Доход";
     })
@@ -865,7 +958,7 @@ function getTotalIncome() {
 }
 
 function getTotalExpense() {
-  return getConvertedMonthOperations()
+  return getConvertedPeriodOperations()
     .filter(function(op) {
       return op.type === "Расход";
     })
@@ -878,54 +971,9 @@ function getBalance() {
   return getTotalIncome() - getTotalExpense();
 }
 
-function initMonthFilter() {
-  const actions = document.querySelector(".actions");
-
-  if (!actions) return;
-  if (document.getElementById("monthFilter")) return;
-
-  const select = document.createElement("select");
-  select.id = "monthFilter";
-
-  select.style.border = "none";
-  select.style.borderRadius = "12px";
-  select.style.background = "#1e293b";
-  select.style.color = "white";
-  select.style.padding = "13px 18px";
-  select.style.fontWeight = "800";
-  select.style.cursor = "pointer";
-
-  const now = new Date();
-
-  for (let i = 11; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-
-    const key =
-      date.getFullYear() +
-      "-" +
-      String(date.getMonth() + 1).padStart(2, "0");
-
-    const label = date.toLocaleDateString("ru-RU", {
-      month: "long",
-      year: "numeric"
-    });
-
-    const option = document.createElement("option");
-    option.value = key;
-    option.textContent = label;
-
-    select.appendChild(option);
-  }
-
-  select.value = getSelectedMonthKey();
-
-  select.addEventListener("change", function() {
-    localStorage.setItem("financeSelectedMonth", select.value);
-    renderAll();
-  });
-
-  actions.prepend(select);
-}
+/* =========================
+   RATES PANEL
+========================= */
 
 function renderCurrencyRatesPanel() {
   if (document.getElementById("currencyRatesPanelLive")) return;
@@ -977,6 +1025,7 @@ function renderCurrencyRatesPanel() {
 
     <div class="history-box">
       <div class="panel-title">ℹ️ Пересчёт валют</div>
+
       <div style="color:#94a3b8;line-height:1.7;">
         EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
         <br><br>
@@ -1064,7 +1113,7 @@ async function fetchLiveRatesFromAPI() {
         cryptoRate = Number(cryptoData.bitcoin.usd) * usdRate;
       }
     } catch (cryptoError) {
-      console.warn("Crypto API not available", cryptoError);
+      console.warn("Crypto API недоступен", cryptoError);
     }
 
     localStorage.setItem("rate_EUR", String(eurRate));
@@ -1098,48 +1147,9 @@ async function fetchLiveRatesFromAPI() {
   }
 }
 
-function updateDashboardKPI() {
-  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
-  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
-  const balance = totalIncome - totalExpense;
-
-  let savingsRate = 0;
-
-  if (totalIncome > 0) {
-    savingsRate = Math.round((balance / totalIncome) * 100);
-  }
-
-  const goalAmount = getGoalAmount();
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const incomeEl = document.getElementById("kpiIncome");
-  const expenseEl = document.getElementById("kpiExpense");
-  const balanceEl = document.getElementById("kpiBalance");
-  const savingsEl = document.getElementById("kpiSavings");
-  const goalEl = document.getElementById("kpiGoal");
-
-  if (incomeEl) incomeEl.textContent = money(totalIncome);
-  if (expenseEl) expenseEl.textContent = money(totalExpense);
-  if (balanceEl) balanceEl.textContent = money(balance);
-  if (savingsEl) savingsEl.textContent = savingsRate + "%";
-  if (goalEl) goalEl.textContent = goalPercent + "%";
-
-  if (goalEl) {
-    const card = goalEl.closest(".card");
-
-    if (card) {
-      const note = card.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = money(balance) + " / " + money(goalAmount);
-      }
-    }
-  }
-}
+/* =========================
+   OPERATIONS
+========================= */
 
 function addOperation() {
   const name = document.getElementById("opName").value.trim();
@@ -1147,7 +1157,7 @@ function addOperation() {
   const type = document.getElementById("opType").value;
   const currency = document.getElementById("opCurrency").value;
   const category = document.getElementById("opCategory").value;
-  const date = document.getElementById("opDate").value || new Date().toISOString().slice(0, 10);
+  const date = document.getElementById("opDate").value || getTodayISO();
 
   if (!amount || amount <= 0) {
     alert("Введи сумму больше 0");
@@ -1177,16 +1187,18 @@ function renderOperations() {
   const tbody = document.getElementById("operationsBody");
   if (!tbody) return;
 
-  if (operations.length === 0) {
+  const filteredOperations = getFilteredOperationsRaw();
+
+  if (filteredOperations.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="color:#94a3b8;">Пока нет добавленных операций</td>
+        <td colspan="6" style="color:#94a3b8;">Нет операций за выбранный период</td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = operations.slice(0, 30).map(function(op) {
+  tbody.innerHTML = filteredOperations.slice(0, 30).map(function(op) {
     const converted = convertToPLN(op);
     const typeClass = op.type === "Доход" ? "badge-income" : "badge-expense";
     const sign = op.type === "Доход" ? "+" : "-";
@@ -1266,73 +1278,57 @@ function exportOperations() {
   URL.revokeObjectURL(url);
 }
 
-function getLastSixMonths() {
-  const months = [];
-  const selectedDate = getSelectedMonthDate();
+/* =========================
+   KPI / LISTS
+========================= */
 
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - i, 1);
+function updateDashboardKPI() {
+  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
+  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
+  const balance = totalIncome - totalExpense;
 
-    months.push({
-      key: date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0"),
-      label: date.toLocaleDateString("ru-RU", { month: "short" })
-    });
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((balance / totalIncome) * 100);
   }
 
-  return months;
-}
+  const goalAmount = getGoalAmount();
 
-function buildMonthlyData() {
-  const months = getLastSixMonths();
-  const convertedAll = operations.map(function(op) {
-    return convertToPLN(op);
-  });
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / goalAmount) * 100))
+  );
 
-  const income = months.map(function(month) {
-    return convertedAll
-      .filter(function(op) {
-        return op.type === "Доход" && op.date && op.date.slice(0, 7) === month.key;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  });
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
 
-  const expense = months.map(function(month) {
-    return convertedAll
-      .filter(function(op) {
-        return op.type === "Расход" && op.date && op.date.slice(0, 7) === month.key;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  });
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
+  if (savingsEl) savingsEl.textContent = savingsRate + "%";
+  if (goalEl) goalEl.textContent = goalPercent + "%";
 
-  const hasData =
-    income.some(function(v) { return v > 0; }) ||
-    expense.some(function(v) { return v > 0; });
+  if (goalEl) {
+    const card = goalEl.closest(".card");
 
-  if (!hasData && operations.length === 0) {
-    return {
-      labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-      income: DEMO_INCOME,
-      expense: DEMO_EXPENSE
-    };
+    if (card) {
+      const note = card.querySelector(".card-note");
+
+      if (note) {
+        note.textContent = money(balance) + " / " + money(goalAmount);
+      }
+    }
   }
-
-  return {
-    labels: months.map(function(month) {
-      return month.label;
-    }),
-    income: income,
-    expense: expense
-  };
 }
 
 function buildExpenseCategories() {
   const result = {};
 
-  getConvertedMonthOperations()
+  getConvertedPeriodOperations()
     .filter(function(op) {
       return op.type === "Расход";
     })
@@ -1425,7 +1421,7 @@ function renderTopExpenses() {
 function renderIncomeSourcesLive() {
   const incomeByCategory = {};
 
-  getConvertedMonthOperations()
+  getConvertedPeriodOperations()
     .filter(function(op) {
       return op.type === "Доход";
     })
@@ -1480,6 +1476,10 @@ function renderIncomeSourcesLive() {
     }
   });
 }
+
+/* =========================
+   GOAL / FORECAST
+========================= */
 
 function updateCustomGoalLive() {
   const goalAmount = getGoalAmount();
@@ -1577,6 +1577,58 @@ function saveGoalAmountLive() {
   renderAll();
 }
 
+function updateForecast() {
+  const balance = hasRealOperations() ? getBalance() : 16046;
+  const data = buildMonthlyData();
+
+  const flows = data.income.map(function(value, index) {
+    return value - data.expense[index];
+  });
+
+  const active = flows.filter(function(value) {
+    return value !== 0;
+  });
+
+  let average = 16046;
+
+  if (active.length > 0) {
+    average = Math.round(active.reduce(function(sum, value) {
+      return sum + value;
+    }, 0) / active.length);
+  }
+
+  const forecast = balance + average;
+
+  const cards = document.querySelectorAll(".mini-card");
+
+  cards.forEach(function(card) {
+    const title = card.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Прогноз баланса")) {
+      card.innerHTML = `
+        <div class="panel-title">🔮 Прогноз баланса</div>
+
+        <div class="forecast-number">
+          ${money(forecast)} PLN
+        </div>
+
+        <div class="forecast-text">
+          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
+          <br><br>
+          <b>${money(forecast)} PLN</b>
+          <br><br>
+          Средний чистый поток:
+          <b>${average >= 0 ? "+" : ""}${money(average)} PLN</b>
+        </div>
+      `;
+    }
+  });
+}
+
+/* =========================
+   CALENDAR
+========================= */
+
 function renderExpenseCalendarLive() {
   const selectedDate = getSelectedMonthDate();
   const year = selectedDate.getFullYear();
@@ -1585,9 +1637,9 @@ function renderExpenseCalendarLive() {
 
   const expensesByDay = {};
 
-  getConvertedMonthOperations()
+  getConvertedPeriodOperations()
     .filter(function(op) {
-      return op.type === "Расход";
+      return op.type === "Расход" && op.date && op.date.slice(0, 7) === getSelectedMonthKey();
     })
     .forEach(function(op) {
       const day = Number(op.date.slice(8, 10));
@@ -1644,54 +1696,240 @@ function renderExpenseCalendarLive() {
   });
 }
 
-function updateForecast() {
-  const balance = hasRealOperations() ? getBalance() : 16046;
+/* =========================
+   CHART DATA
+========================= */
 
-  const monthlyData = buildMonthlyData();
-
-  const flows = monthlyData.income.map(function(value, index) {
-    return value - monthlyData.expense[index];
+function buildMonthlyData() {
+  const mode = getPeriodMode();
+  const convertedAll = operations.map(function(op) {
+    return convertToPLN(op);
   });
 
-  const active = flows.filter(function(value) {
-    return value !== 0;
-  });
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
 
-  let average = 16046;
+    const dayOps = convertedAll.filter(function(op) {
+      return op.date === selectedDay;
+    });
 
-  if (active.length > 0) {
-    average = Math.round(active.reduce(function(sum, value) {
-      return sum + value;
-    }, 0) / active.length);
+    return {
+      labels: [selectedDay],
+      income: [
+        dayOps
+          .filter(function(op) {
+            return op.type === "Доход";
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      ],
+      expense: [
+        dayOps
+          .filter(function(op) {
+            return op.type === "Расход";
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      ]
+    };
   }
 
-  const forecast = balance + average;
+  if (mode === "year") {
+    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
 
-  const cards = document.querySelectorAll(".mini-card");
+    const labels = [
+      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+    ];
 
-  cards.forEach(function(card) {
-    const title = card.querySelector(".panel-title");
+    const income = [];
+    const expense = [];
 
-    if (title && title.textContent.includes("Прогноз баланса")) {
-      card.innerHTML = `
-        <div class="panel-title">🔮 Прогноз баланса</div>
+    for (let i = 1; i <= 12; i++) {
+      const key = selectedYear + "-" + String(i).padStart(2, "0");
 
-        <div class="forecast-number">
-          ${money(forecast)} PLN
-        </div>
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Доход" && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
 
-        <div class="forecast-text">
-          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
-          <br><br>
-          <b>${money(forecast)} PLN</b>
-          <br><br>
-          Средний чистый поток:
-          <b>${average >= 0 ? "+" : ""}${money(average)} PLN</b>
-        </div>
-      `;
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Расход" && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
     }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "month") {
+    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+    const parts = selectedMonth.split("-");
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const labels = [];
+    const income = [];
+    const expense = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = selectedMonth + "-" + String(day).padStart(2, "0");
+
+      labels.push(String(day));
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Доход" && op.date === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Расход" && op.date === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0 && diffDays <= 31) {
+      const labels = [];
+      const income = [];
+      const expense = [];
+
+      for (let i = 0; i <= diffDays; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const key =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0");
+
+        labels.push(String(date.getDate()));
+
+        income.push(
+          convertedAll
+            .filter(function(op) {
+              return op.type === "Доход" && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+
+        expense.push(
+          convertedAll
+            .filter(function(op) {
+              return op.type === "Расход" && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+      }
+
+      return {
+        labels: labels,
+        income: income,
+        expense: expense
+      };
+    }
+  }
+
+  const months = [];
+  const now = new Date();
+
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+
+    months.push({
+      key: date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0"),
+      label: date.toLocaleDateString("ru-RU", { month: "short" })
+    });
+  }
+
+  const income = months.map(function(month) {
+    return convertedAll
+      .filter(function(op) {
+        return op.type === "Доход" && op.date && op.date.slice(0, 7) === month.key;
+      })
+      .reduce(function(sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
   });
+
+  const expense = months.map(function(month) {
+    return convertedAll
+      .filter(function(op) {
+        return op.type === "Расход" && op.date && op.date.slice(0, 7) === month.key;
+      })
+      .reduce(function(sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
+  });
+
+  if (operations.length === 0) {
+    return {
+      labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+      income: DEMO_INCOME,
+      expense: DEMO_EXPENSE
+    };
+  }
+
+  return {
+    labels: months.map(function(month) {
+      return month.label;
+    }),
+    income: income,
+    expense: expense
+  };
 }
+
+/* =========================
+   CANVAS CHARTS
+========================= */
 
 function prepareCanvas(id, fixedHeight) {
   const canvas = document.getElementById(id);
@@ -1703,7 +1941,6 @@ function prepareCanvas(id, fixedHeight) {
 
   canvas.width = width;
   canvas.height = height;
-
   canvas.style.width = "100%";
   canvas.style.height = height + "px";
   canvas.style.display = "block";
@@ -1750,7 +1987,7 @@ function drawIncomeChart() {
 
   function getX(index) {
     if (labels.length === 1) return width / 2;
-    return padding + ((width - padding * 2) / (labels.length - 1)) * index;
+    return padding + ((width - padding * 2) / Math.max(1, labels.length - 1)) * index;
   }
 
   function getY(value) {
@@ -1784,7 +2021,7 @@ function drawIncomeChart() {
       const y = getY(value);
 
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
     });
@@ -1794,11 +2031,15 @@ function drawIncomeChart() {
   drawLine(expense, "#ef4444", "rgba(239,68,68,0.14)");
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "13px Segoe UI";
+  ctx.font = "12px Segoe UI";
   ctx.textAlign = "center";
 
+  const step = Math.max(1, Math.ceil(labels.length / 12));
+
   labels.forEach(function(label, index) {
-    ctx.fillText(label, getX(index), height - 15);
+    if (index % step === 0) {
+      ctx.fillText(label, getX(index), height - 15);
+    }
   });
 
   ctx.textAlign = "left";
@@ -1911,8 +2152,8 @@ function drawCashFlowChart() {
     ctx.stroke();
   }
 
-  const barWidth = 24;
-  const groupGap = (width - padding * 2) / labels.length;
+  const groupGap = (width - padding * 2) / Math.max(1, labels.length);
+  const barWidth = Math.max(6, Math.min(24, groupGap / 4));
 
   labels.forEach(function(label, index) {
     const baseX = padding + groupGap * index + groupGap / 2;
@@ -1931,10 +2172,12 @@ function drawCashFlowChart() {
     roundRect(ctx, baseX + 3, expenseY, barWidth, expenseHeight, 6);
     ctx.fill();
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Segoe UI";
-    ctx.textAlign = "center";
-    ctx.fillText(label, baseX, height - 14);
+    if (labels.length <= 12 || index % Math.ceil(labels.length / 12) === 0) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "12px Segoe UI";
+      ctx.textAlign = "center";
+      ctx.fillText(label, baseX, height - 14);
+    }
   });
 
   ctx.textAlign = "left";
@@ -1957,6 +2200,10 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
+
+/* =========================
+   RENDER ALL
+========================= */
 
 function renderAll() {
   initMonthFilter();
@@ -1982,6 +2229,470 @@ window.addEventListener("resize", function() {
   drawExpenseChart();
   drawCashFlowChart();
 });
+
+/* ===============================
+   REMOVE DEMO VALUES / ZERO MODE
+================================ */
+
+function getZeroLabelsForCurrentPeriod() {
+  if (typeof getPeriodMode !== "function") {
+    return ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+  }
+
+  const mode = getPeriodMode();
+
+  if (mode === "day") {
+    const day = localStorage.getItem("financePeriodDay") || getTodayISO();
+    return [day];
+  }
+
+  if (mode === "month") {
+    const month = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+    const parts = month.split("-");
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const labels = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      labels.push(String(day));
+    }
+
+    return labels;
+  }
+
+  if (mode === "year") {
+    return [
+      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+    ];
+  }
+
+  return ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+}
+
+buildMonthlyData = function() {
+  const mode = typeof getPeriodMode === "function" ? getPeriodMode() : "month";
+  const convertedAll = operations.map(function(op) {
+    return convertToPLN(op);
+  });
+
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
+
+    const income = convertedAll
+      .filter(function(op) {
+        return op.type === "Доход" && op.date === selectedDay;
+      })
+      .reduce(function(sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
+
+    const expense = convertedAll
+      .filter(function(op) {
+        return op.type === "Расход" && op.date === selectedDay;
+      })
+      .reduce(function(sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
+
+    return {
+      labels: [selectedDay],
+      income: [income],
+      expense: [expense]
+    };
+  }
+
+  if (mode === "month") {
+    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+    const parts = selectedMonth.split("-");
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const labels = [];
+    const income = [];
+    const expense = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = selectedMonth + "-" + String(day).padStart(2, "0");
+
+      labels.push(String(day));
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Доход" && op.date === dateKey;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Расход" && op.date === dateKey;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "year") {
+    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+
+    const labels = [
+      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+    ];
+
+    const income = [];
+    const expense = [];
+
+    for (let i = 1; i <= 12; i++) {
+      const key = selectedYear + "-" + String(i).padStart(2, "0");
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Доход" && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return op.type === "Расход" && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0 && diffDays <= 31) {
+      const labels = [];
+      const income = [];
+      const expense = [];
+
+      for (let i = 0; i <= diffDays; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const key =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0");
+
+        labels.push(String(date.getDate()));
+
+        income.push(
+          convertedAll
+            .filter(function(op) {
+              return op.type === "Доход" && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+
+        expense.push(
+          convertedAll
+            .filter(function(op) {
+              return op.type === "Расход" && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+      }
+
+      return {
+        labels: labels,
+        income: income,
+        expense: expense
+      };
+    }
+  }
+
+  const labels = getZeroLabelsForCurrentPeriod();
+
+  return {
+    labels: labels,
+    income: labels.map(function() {
+      return 0;
+    }),
+    expense: labels.map(function() {
+      return 0;
+    })
+  };
+};
+
+buildExpenseCategories = function() {
+  const result = {};
+
+  getConvertedPeriodOperations()
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .forEach(function(op) {
+      if (!result[op.category]) {
+        result[op.category] = 0;
+      }
+
+      result[op.category] += Number(op.amount);
+    });
+
+  const data = Object.keys(result)
+    .map(function(category) {
+      return {
+        label: category,
+        value: result[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    })
+    .slice(0, 6);
+
+  const colors = [
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#a855f7",
+    "#06b6d4",
+    "#ef4444"
+  ];
+
+  return data.map(function(item, index) {
+    return {
+      label: item.label,
+      value: item.value,
+      color: colors[index % colors.length]
+    };
+  });
+};
+
+updateDashboardKPI = function() {
+  const totalIncome = getTotalIncome();
+  const totalExpense = getTotalExpense();
+  const balance = totalIncome - totalExpense;
+
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((balance / totalIncome) * 100);
+  }
+
+  const goalAmount = getGoalAmount();
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / goalAmount) * 100))
+  );
+
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
+  if (savingsEl) savingsEl.textContent = savingsRate + "%";
+  if (goalEl) goalEl.textContent = goalPercent + "%";
+
+  if (goalEl) {
+    const card = goalEl.closest(".card");
+
+    if (card) {
+      const note = card.querySelector(".card-note");
+
+      if (note) {
+        note.textContent = money(balance) + " / " + money(goalAmount);
+      }
+    }
+  }
+};
+
+renderIncomeSourcesLive = function() {
+  const incomeByCategory = {};
+
+  getConvertedPeriodOperations()
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .forEach(function(op) {
+      if (!incomeByCategory[op.category]) {
+        incomeByCategory[op.category] = 0;
+      }
+
+      incomeByCategory[op.category] += Number(op.amount);
+    });
+
+  const incomeData = Object.keys(incomeByCategory)
+    .map(function(category) {
+      return {
+        label: category,
+        value: incomeByCategory[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    });
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Доходы по источникам")) {
+      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
+
+      if (incomeData.length === 0) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `
+          <span>Нет доходов</span>
+          <span>0 PLN</span>
+        `;
+        panel.appendChild(row);
+        return;
+      }
+
+      incomeData.forEach(function(item) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>${item.label}</span>
+          <span>${money(item.value)} PLN</span>
+        `;
+
+        panel.appendChild(row);
+      });
+    }
+  });
+};
+
+drawExpenseChart = function() {
+  const chart = prepareCanvas("expenseChart", 320);
+  if (!chart) return;
+
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  const data = buildExpenseCategories();
+
+  const total = data.reduce(function(sum, item) {
+    return sum + item.value;
+  }, 0);
+
+  if (total <= 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 22px Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillText("0 PLN", width / 2, 145);
+
+    ctx.font = "13px Segoe UI";
+    ctx.fillText("Нет расходов", width / 2, 170);
+    return;
+  }
+
+  const centerX = width / 2;
+  const centerY = 140;
+  const radius = 95;
+  const innerRadius = 55;
+
+  let startAngle = -Math.PI / 2;
+
+  data.forEach(function(item) {
+    const slice = (item.value / total) * Math.PI * 2;
+    const endAngle = startAngle + slice;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+    ctx.closePath();
+
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    startAngle = endAngle;
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.fillText(money(total), centerX, centerY - 4);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "13px Segoe UI";
+  ctx.fillText("PLN расходы", centerX, centerY + 20);
+
+  ctx.textAlign = "left";
+  ctx.font = "13px Segoe UI";
+
+  const legendY = 255;
+
+  data.slice(0, 4).forEach(function(item, index) {
+    const x = 30 + (index % 2) * 150;
+    const y = legendY + Math.floor(index / 2) * 28;
+
+    ctx.fillStyle = item.color;
+    ctx.fillRect(x, y, 12, 12);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(item.label, x + 20, y + 11);
+  });
+};
+
+function resetAllSavedData() {
+  if (!confirm("Удалить все сохранённые операции?")) return;
+
+  operations = [];
+  localStorage.removeItem("financeOperations");
+
+  renderAll();
+}
+
+renderAll();
 
 </script>
 
