@@ -1487,6 +1487,141 @@ if (typeof deleteOperation === "function") {
   const deleteOperationOriginalForCharts = deleteOperation;
 };
 
+function getDashboardMoneyStateForGoal() {
+  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
+  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
+  const balance = totalIncome - totalExpense;
+
+  return {
+    income: totalIncome,
+    expense: totalExpense,
+    balance: balance
+  };
+}
+
+function calculateAverageMonthlyCashFlow() {
+  const monthlyData = buildMonthlyData();
+
+  const cashFlow = monthlyData.income.map(function(incomeValue, index) {
+    return incomeValue - monthlyData.expense[index];
+  });
+
+  const activeMonths = cashFlow.filter(function(value) {
+    return value !== 0;
+  });
+
+  if (activeMonths.length === 0) {
+    return 16046;
+  }
+
+  const average = activeMonths.reduce(function(sum, value) {
+    return sum + value;
+  }, 0) / activeMonths.length;
+
+  return Math.round(average);
+}
+
+function updateGoalAndForecast() {
+  const goalAmount = 100000;
+
+  const state = getDashboardMoneyStateForGoal();
+  const balance = state.balance;
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / goalAmount) * 100))
+  );
+
+  const remaining = Math.max(0, goalAmount - balance);
+  const averageCashFlow = calculateAverageMonthlyCashFlow();
+  const forecastNextMonth = balance + averageCashFlow;
+
+  const goalKpi = document.getElementById("kpiGoal");
+
+  if (goalKpi) {
+    goalKpi.textContent = goalPercent + "%";
+
+    const goalCard = goalKpi.closest(".card");
+
+    if (goalCard) {
+      const note = goalCard.querySelector(".card-note");
+
+      if (note) {
+        note.textContent =
+          formatMoney(balance) + " / " + formatMoney(goalAmount);
+      }
+    }
+  }
+
+  const progressFill = document.querySelector(".progress-fill");
+
+  if (progressFill) {
+    progressFill.style.width = goalPercent + "%";
+  }
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    if (panel.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div class="big-number">
+          ${formatMoney(goalAmount)} PLN
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          Накоплено: ${formatMoney(balance)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Осталось: ${formatMoney(remaining)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Прогресс: ${goalPercent}%
+        </div>
+      `;
+    }
+  });
+
+  const forecastCards = document.querySelectorAll(".mini-card");
+
+  forecastCards.forEach(function(card) {
+    if (card.textContent.includes("Прогноз баланса")) {
+      card.innerHTML = `
+        <div class="panel-title">🔮 Прогноз баланса</div>
+
+        <div class="forecast-number">
+          ${formatMoney(forecastNextMonth)} PLN
+        </div>
+
+        <div class="forecast-text">
+          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
+          <br><br>
+          <b>${formatMoney(forecastNextMonth)} PLN</b>
+          <br><br>
+          Средний чистый поток:
+          <b>${averageCashFlow >= 0 ? "+" : ""}${formatMoney(averageCashFlow)} PLN</b>
+        </div>
+      `;
+    }
+  });
+}
+
+const renderAllOriginalForGoalAndForecast = renderAll;
+
+renderAll = function() {
+  renderAllOriginalForGoalAndForecast();
+  updateGoalAndForecast();
+};
+
+updateGoalAndForecast();
+
 </script>
 
 </body>
