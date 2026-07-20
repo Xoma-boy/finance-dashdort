@@ -2694,6 +2694,516 @@ function resetAllSavedData() {
 
 renderAll();
 
+ ===============================
+   SAVINGS / TOTAL BALANCE LOGIC
+================================ */
+
+function isSavingsCategoryName(category) {
+  if (!category) return false;
+
+  const name = String(category).toLowerCase().trim();
+
+  return (
+    name === "накопления" ||
+    name === "сбережения" ||
+    name === "отложить" ||
+    name === "отложено" ||
+    name === "saving" ||
+    name === "savings"
+  );
+}
+
+function isSavingsOperation(op) {
+  return isSavingsCategoryName(op.category);
+}
+
+function addSavingsCategoriesToSelect() {
+  const select = document.getElementById("opCategory");
+  if (!select) return;
+
+  const existing = Array.from(select.options).map(function(option) {
+    return option.value;
+  });
+
+  const categoriesToAdd = [
+    "Накопления",
+    "Сбережения",
+    "Отложить"
+  ];
+
+  categoriesToAdd.forEach(function(category) {
+    if (!existing.includes(category)) {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      select.appendChild(option);
+    }
+  });
+}
+
+function getAllConvertedOperationsForSavingsLogic() {
+  if (typeof getFilteredOperationsRaw === "function") {
+    return getFilteredOperationsRaw().map(function(op) {
+      return typeof convertToPLN === "function" ? convertToPLN(op) : op;
+    });
+  }
+
+  return operations.map(function(op) {
+    return typeof convertToPLN === "function" ? convertToPLN(op) : op;
+  });
+}
+
+function getIncomeOperationsForSavingsLogic() {
+  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
+    return op.type === "Доход" && !isSavingsOperation(op);
+  });
+}
+
+function getExpenseOperationsForSavingsLogic() {
+  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
+    return op.type === "Расход" && !isSavingsOperation(op);
+  });
+}
+
+function getSavingsOperationsForSavingsLogic() {
+  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
+    return isSavingsOperation(op);
+  });
+}
+
+function getTotalIncome() {
+  return getIncomeOperationsForSavingsLogic().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalExpense() {
+  return getExpenseOperationsForSavingsLogic().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalSavings() {
+  return getSavingsOperationsForSavingsLogic().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getBalance() {
+  return getTotalIncome() - getTotalExpense() - getTotalSavings();
+}
+
+function getTotalBalance() {
+  return getBalance() + getTotalSavings();
+}
+
+function ensureTotalBalanceCardExists() {
+  const grid = document.querySelector(".kpi-grid");
+  if (!grid) return;
+
+  if (document.getElementById("kpiTotalBalance")) return;
+
+  const card = document.createElement("div");
+  card.className = "card";
+
+  card.innerHTML = `
+    <div class="card-label">Общий баланс</div>
+    <div id="kpiTotalBalance" class="card-value blue">0</div>
+    <div class="card-note">Баланс + накопления</div>
+  `;
+
+  grid.appendChild(card);
+
+  if (grid.style) {
+    grid.style.gridTemplateColumns = "repeat(6, 1fr)";
+  }
+}
+
+function updateDashboardKPI() {
+  const totalIncome = getTotalIncome();
+  const totalExpense = getTotalExpense();
+  const totalSavings = getTotalSavings();
+  const balance = getBalance();
+  const totalBalance = getTotalBalance();
+
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((totalSavings / totalIncome) * 100);
+  }
+
+  const goalAmount =
+    typeof getGoalAmount === "function"
+      ? getGoalAmount()
+      : Number(localStorage.getItem("financeGoalAmount")) || 100000;
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
+  );
+
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+  const totalBalanceEl = document.getElementById("kpiTotalBalance");
+
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
+  if (savingsEl) savingsEl.textContent = money(totalSavings);
+  if (goalEl) goalEl.textContent = goalPercent + "%";
+  if (totalBalanceEl) totalBalanceEl.textContent = money(totalBalance);
+
+  if (savingsEl) {
+    const savingsCard = savingsEl.closest(".card");
+
+    if (savingsCard) {
+      const note = savingsCard.querySelector(".card-note");
+
+      if (note) {
+        note.textContent = savingsRate + "% от дохода";
+      }
+    }
+  }
+
+  if (goalEl) {
+    const goalCard = goalEl.closest(".card");
+
+    if (goalCard) {
+      const note = goalCard.querySelector(".card-note");
+
+      if (note) {
+        note.textContent = money(totalSavings) + " / " + money(goalAmount);
+      }
+    }
+  }
+}
+
+function updateCustomGoalLive() {
+  const goalAmount =
+    typeof getGoalAmount === "function"
+      ? getGoalAmount()
+      : Number(localStorage.getItem("financeGoalAmount")) || 100000;
+
+  const totalSavings = getTotalSavings();
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
+  );
+
+  const remaining = Math.max(0, goalAmount - totalSavings);
+
+  const kpiGoal = document.getElementById("kpiGoal");
+
+  if (kpiGoal) {
+    kpiGoal.textContent = goalPercent + "%";
+  }
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
+          <input
+            id="goalAmountInputLive"
+            type="number"
+            value="${goalAmount}"
+            placeholder="Введите цель"
+            style="
+              width:100%;
+              padding:13px 14px;
+              border-radius:12px;
+              border:1px solid rgba(255,255,255,0.08);
+              background:#0f172a;
+              color:white;
+              outline:none;
+              font-weight:700;
+            "
+          >
+
+          <button
+            onclick="saveGoalAmountLive()"
+            style="
+              padding:13px 18px;
+              border:none;
+              border-radius:12px;
+              background:#3b82f6;
+              color:white;
+              font-weight:900;
+              cursor:pointer;
+            "
+          >
+            Сохранить
+          </button>
+        </div>
+
+        <div class="big-number">
+          ${money(goalAmount)} PLN
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          Накоплено: ${money(totalSavings)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Осталось: ${money(remaining)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Прогресс: ${goalPercent}%
+        </div>
+      `;
+    }
+  });
+}
+
+function buildExpenseCategories() {
+  const result = {};
+
+  getExpenseOperationsForSavingsLogic().forEach(function(op) {
+    if (!result[op.category]) {
+      result[op.category] = 0;
+    }
+
+    result[op.category] += Number(op.amount);
+  });
+
+  const data = Object.keys(result)
+    .map(function(category) {
+      return {
+        label: category,
+        value: result[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    })
+    .slice(0, 6);
+
+  const colors = [
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#a855f7",
+    "#06b6d4",
+    "#ef4444"
+  ];
+
+  return data.map(function(item, index) {
+    return {
+      label: item.label,
+      value: item.value,
+      color: colors[index % colors.length]
+    };
+  });
+}
+
+function renderIncomeSourcesLive() {
+  const incomeByCategory = {};
+
+  getIncomeOperationsForSavingsLogic().forEach(function(op) {
+    if (!incomeByCategory[op.category]) {
+      incomeByCategory[op.category] = 0;
+    }
+
+    incomeByCategory[op.category] += Number(op.amount);
+  });
+
+  const incomeData = Object.keys(incomeByCategory)
+    .map(function(category) {
+      return {
+        label: category,
+        value: incomeByCategory[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    });
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Доходы по источникам")) {
+      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
+
+      if (incomeData.length === 0) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>Нет доходов</span>
+          <span>0 PLN</span>
+        `;
+
+        panel.appendChild(row);
+        return;
+      }
+
+      incomeData.forEach(function(item) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>${item.label}</span>
+          <span>${money(item.value)} PLN</span>
+        `;
+
+        panel.appendChild(row);
+      });
+    }
+  });
+}
+
+function buildMonthlyData() {
+  const mode = typeof getPeriodMode === "function" ? getPeriodMode() : "month";
+  const convertedAll = operations.map(function(op) {
+    return convertToPLN(op);
+  });
+
+  function isIncomeForChart(op) {
+    return op.type === "Доход" && !isSavingsOperation(op);
+  }
+
+  function isExpenseForChart(op) {
+    return op.type === "Расход" && !isSavingsOperation(op);
+  }
+
+  if (mode === "month") {
+    const selectedMonth =
+      localStorage.getItem("financePeriodMonth") ||
+      (typeof getCurrentMonthISO === "function" ? getCurrentMonthISO() : new Date().toISOString().slice(0, 7));
+
+    const parts = selectedMonth.split("-");
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const labels = [];
+    const income = [];
+    const expense = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = selectedMonth + "-" + String(day).padStart(2, "0");
+
+      labels.push(String(day));
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return isIncomeForChart(op) && op.date === dateKey;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return isExpenseForChart(op) && op.date === dateKey;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "year") {
+    const selectedYear =
+      localStorage.getItem("financePeriodYear") ||
+      String(new Date().getFullYear());
+
+    const labels = [
+      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+    ];
+
+    const income = [];
+    const expense = [];
+
+    for (let i = 1; i <= 12; i++) {
+      const key = selectedYear + "-" + String(i).padStart(2, "0");
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return isIncomeForChart(op) && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return isExpenseForChart(op) && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+
+  return {
+    labels: labels,
+    income: labels.map(function() { return 0; }),
+    expense: labels.map(function() { return 0; })
+  };
+}
+
+function renderAllSavingsLogic() {
+  addSavingsCategoriesToSelect();
+  ensureTotalBalanceCardExists();
+
+  if (typeof renderAll === "function") {
+    renderAll();
+  }
+
+  updateDashboardKPI();
+  updateCustomGoalLive();
+
+  if (typeof drawIncomeChart === "function") drawIncomeChart();
+  if (typeof drawExpenseChart === "function") drawExpenseChart();
+  if (typeof drawCashFlowChart === "function") drawCashFlowChart();
+}
+
+window.addEventListener("load", function() {
+  setTimeout(function() {
+    renderAllSavingsLogic();
+  }, 300);
+});
+
 </script>
 
 </body>
