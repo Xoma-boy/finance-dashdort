@@ -1624,5 +1624,94 @@ updateGoalAndForecast();
 
 </script>
 
+<script>
+function updateGoalAndForecastLive() {
+  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+  const plnOperations = savedOperations.filter(function(op) {
+    return op.currency === "PLN";
+  });
+
+  const totalIncome = plnOperations
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const totalExpense = plnOperations
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const balance = totalIncome - totalExpense;
+
+  const goalAmount = 100000;
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / goalAmount) * 100))
+  );
+
+  const remaining = Math.max(0, goalAmount - balance);
+
+  function formatMoney(value) {
+    return Math.round(value).toLocaleString("ru-RU");
+  }
+
+  let averageCashFlow = balance;
+
+  if (averageCashFlow === 0) {
+    averageCashFlow = 16046;
+  }
+
+  const forecastNextMonth = balance + averageCashFlow;
+
+  const kpiGoal = document.getElementById("kpiGoal");
+
+  if (kpiGoal) {
+    kpiGoal.textContent = goalPercent + "%";
+
+    const card = kpiGoal.closest(".card");
+
+    if (card) {
+      const note = card.querySelector(".card-note");
+
+      if (note) {
+        note.textContent = formatMoney(balance) + " / " + formatMoney(goalAmount);
+      }
+    }
+  }
+
+  const goalPanels = document.querySelectorAll(".panel");
+
+  goalPanels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div class="big-number">
+          ${formatMoney(goalAmount)} PLN
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          Накоплено: ${formatMoney(balance)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Осталось: ${formatMoney(remaining)} PLN
+        </div>
+
+        <div 
+
 </body>
 </html>
