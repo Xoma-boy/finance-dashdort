@@ -1849,6 +1849,188 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
+
+
+(function () {
+  function money(value) {
+    return Math.round(Number(value) || 0).toLocaleString("ru-RU");
+  }
+
+  function getRatesFinal() {
+    return {
+      PLN: 1,
+      EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
+      USD: Number(localStorage.getItem("rate_USD")) || 3.9,
+      CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
+      STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
+    };
+  }
+
+  function convertToPLNFinal(op) {
+    const rates = getRatesFinal();
+    const rate = rates[op.currency] || 1;
+
+    return {
+      id: op.id,
+      name: op.name,
+      amount: Number(op.amount) * rate,
+      originalAmount: Number(op.amount),
+      type: op.type,
+      currency: "PLN",
+      originalCurrency: op.currency || "PLN",
+      category: op.category,
+      date: op.date
+    };
+  }
+
+  function getSelectedMonthKeyFinal() {
+    if (typeof getSelectedMonthKey === "function") {
+      return getSelectedMonthKey();
+    }
+
+    const now = new Date();
+
+    return (
+      now.getFullYear() +
+      "-" +
+      String(now.getMonth() + 1).padStart(2, "0")
+    );
+  }
+
+  function getMonthOperationsFinal() {
+    const selectedMonth = getSelectedMonthKeyFinal();
+
+    return operations.filter(function (op) {
+      return op.date && op.date.slice(0, 7) === selectedMonth;
+    });
+  }
+
+  function getConvertedMonthOperationsFinal() {
+    return getMonthOperationsFinal().map(function (op) {
+      return convertToPLNFinal(op);
+    });
+  }
+
+  window.getPLNOperations = function () {
+    return getConvertedMonthOperationsFinal();
+  };
+
+  window.getOperationsPLN = function () {
+    return getConvertedMonthOperationsFinal();
+  };
+
+  window.hasRealOperations = function () {
+    return getConvertedMonthOperationsFinal().length > 0;
+  };
+
+  window.getTotalIncome = function () {
+    return getConvertedMonthOperationsFinal()
+      .filter(function (op) {
+        return op.type === "Доход";
+      })
+      .reduce(function (sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
+  };
+
+  window.getTotalExpense = function () {
+    return getConvertedMonthOperationsFinal()
+      .filter(function (op) {
+        return op.type === "Расход";
+      })
+      .reduce(function (sum, op) {
+        return sum + Number(op.amount);
+      }, 0);
+  };
+
+  window.getBalance = function () {
+    return getTotalIncome() - getTotalExpense();
+  };
+
+  window.buildExpenseCategories = function () {
+    const result = {};
+
+    getConvertedMonthOperationsFinal()
+      .filter(function (op) {
+        return op.type === "Расход";
+      })
+      .forEach(function (op) {
+        if (!result[op.category]) {
+          result[op.category] = 0;
+        }
+
+        result[op.category] += Number(op.amount);
+      });
+
+    let data = Object.keys(result)
+      .map(function (category) {
+        return {
+          label: category,
+          value: result[category]
+        };
+      })
+      .sort(function (a, b) {
+        return b.value - a.value;
+      })
+      .slice(0, 6);
+
+    if (data.length === 0 && operations.length === 0) {
+      data = [
+        { label: "Квартира", value: 3043 },
+        { label: "Подарки", value: 2050 },
+        { label: "Маме", value: 2000 },
+        { label: "Бедренка", value: 1270 },
+        { label: "Интернет", value: 50 },
+        { label: "Зал", value: 50 }
+      ];
+    }
+
+    if (data.length === 0) {
+      data = [
+        { label: "Нет расходов", value: 1 }
+      ];
+    }
+
+    const colors = [
+      "#3b82f6",
+      "#22c55e",
+      "#f59e0b",
+      "#a855f7",
+      "#06b6d4",
+      "#ef4444"
+    ];
+
+    return data.map(function (item, index) {
+      return {
+        label: item.label,
+        value: item.value,
+        color: colors[index % colors.length]
+      };
+    });
+  };
+
+  window.buildMonthlyData = function () {
+    const months = typeof getLastSixMonths === "function"
+      ? getLastSixMonths()
+      : [];
+
+    if (months.length === 0) {
+      return {
+        labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
+        income: [3000, 5000, 8000, 12000, 18000, 25383],
+        expense: [1000, 2000, 3000, 5000, 7000, 9337]
+      };
+    }
+
+    const convertedAllOperations = operations.map(function (op) {
+      return convertToPLNFinal(op);
+    });
+
+    const income = months.map(function (month) {
+      return convertedAllOperations
+        .filter(function (op) {
+          return op.type === "Доход" && op.date && op.
+
 </script>
 
 </body>
