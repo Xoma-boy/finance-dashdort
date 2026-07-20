@@ -2290,6 +2290,20 @@ window.addEventListener("resize", function() {
   drawCashFlowChart();
 });
 
+/* ===============================
+   ADD SAVINGS AS OPERATION TYPE
+================================ */
+
+function addSavingsTypeOption() {
+  const typeSelect = document.getElementById("opType");
+  const categorySelect = document.getElementById("opCategory");
+
+  if (!typeSelect || !categorySelect) return;
+
+  const existingTypes = Array.from(typeSelect.options).map(function(option) {
+    return option.value;
+  }
+
 </script>
 
 </body>
