@@ -619,6 +619,174 @@ canvas {
 </div>
 
 <script>
+function getSavedGoalAmountLive() {
+  const savedGoal = Number(localStorage.getItem("financeGoalAmount"));
+
+  if (savedGoal && savedGoal > 0) {
+    return savedGoal;
+  }
+
+  return 100000;
+}
+
+function saveGoalAmountLive() {
+  const input = document.getElementById("goalAmountInputLive");
+
+  if (!input) return;
+
+  const value = Number(input.value);
+
+  if (!value || value <= 0) {
+    alert("Введи цель больше 0");
+    return;
+  }
+
+  localStorage.setItem("financeGoalAmount", String(value));
+
+  updateCustomGoalLive();
+}
+
+function getCurrentBalanceForGoalLive() {
+  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+  const plnOperations = savedOperations.filter(function(op) {
+    return op.currency === "PLN";
+  });
+
+  const totalIncome = plnOperations
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const totalExpense = plnOperations
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  if (plnOperations.length === 0) {
+    return 16046;
+  }
+
+  return totalIncome - totalExpense;
+}
+
+function formatGoalMoneyLive(value) {
+  return Math.round(value).toLocaleString("ru-RU");
+}
+
+function updateCustomGoalLive() {
+  const goalAmount = getSavedGoalAmountLive();
+  const balance = getCurrentBalanceForGoalLive();
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / goalAmount) * 100))
+  );
+
+  const remaining = Math.max(0, goalAmount - balance);
+
+  const kpiGoal = document.getElementById("kpiGoal");
+
+  if (kpiGoal) {
+    kpiGoal.textContent = goalPercent + "%";
+
+    const goalCard = kpiGoal.closest(".card");
+
+    if (goalCard) {
+      const note = goalCard.querySelector(".card-note");
+
+      if (note) {
+        note.textContent =
+          formatGoalMoneyLive(balance) + " / " + formatGoalMoneyLive(goalAmount);
+      }
+    }
+  }
+
+  const goalPanels = document.querySelectorAll(".panel");
+
+  goalPanels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
+          <input
+            id="goalAmountInputLive"
+            type="number"
+            value="${goalAmount}"
+            placeholder="Введите цель"
+            style="
+              width:100%;
+              padding:13px 14px;
+              border-radius:12px;
+              border:1px solid rgba(255,255,255,0.08);
+              background:#0f172a;
+              color:white;
+              outline:none;
+              font-weight:700;
+            "
+          >
+
+          <button
+            onclick="saveGoalAmountLive()"
+            style="
+              padding:13px 18px;
+              border:none;
+              border-radius:12px;
+              background:#3b82f6;
+              color:white;
+              font-weight:900;
+              cursor:pointer;
+            "
+          >
+            Сохранить
+          </button>
+        </div>
+
+        <div class="big-number">
+          ${formatGoalMoneyLive(goalAmount)} PLN
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          Накоплено: ${formatGoalMoneyLive(balance)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Осталось: ${formatGoalMoneyLive(remaining)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Прогресс: ${goalPercent}%
+        </div>
+      `;
+    }
+  });
+}
+
+window.addEventListener("load", function() {
+  setTimeout(function() {
+    updateCustomGoalLive();
+  }, 100);
+});
+
+document.addEventListener("click", function() {
+  setTimeout(function() {
+    updateCustomGoalLive();
+  }, 150);
+});
+
 function renderIncomeSourcesLive() {
   const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
