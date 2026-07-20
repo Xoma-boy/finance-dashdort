@@ -619,18 +619,275 @@ canvas {
 </div>
 
 <script>
+let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
+const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
+
+function money(value) {
+  return Math.round(Number(value) || 0).toLocaleString("ru-RU");
+}
+
+function getGoalAmount() {
+  return Number(localStorage.getItem("financeGoalAmount")) || 100000;
+}
+
+function getRates() {
+  return {
+    PLN: 1,
+    EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
+    USD: Number(localStorage.getItem("rate_USD")) || 3.9,
+    CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
+    STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
+  };
+}
+
+function convertToPLN(op) {
+  const rates = getRates();
+  const rate = rates[op.currency] || 1;
+
+  return {
+    id: op.id,
+    name: op.name,
+    amount: Number(op.amount) * rate,
+    originalAmount: Number(op.amount),
+    type: op.type,
+    currency: "PLN",
+    originalCurrency: op.currency || "PLN",
+    category: op.category,
+    date: op.date
+  };
+}
+
+function getSelectedMonthKey() {
+  const saved = localStorage.getItem("financeSelectedMonth");
+
+  if (saved) return saved;
+
+  const now = new Date();
+
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+}
+
+function getSelectedMonthDate() {
+  const key = getSelectedMonthKey();
+  const parts = key.split("-");
+
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+}
+
+function getMonthOperationsRaw() {
+  const selectedMonth = getSelectedMonthKey();
+
+  return operations.filter(function(op) {
+    return op.date && op.date.slice(0, 7) === selectedMonth;
+  });
+}
+
+function getConvertedMonthOperations() {
+  return getMonthOperationsRaw().map(function(op) {
+    return convertToPLN(op);
+  });
+}
+
+function getPLNOperations() {
+  return getConvertedMonthOperations();
+}
+
+function getOperationsPLN() {
+  return getConvertedMonthOperations();
+}
+
+function hasRealOperations() {
+  return getConvertedMonthOperations().length > 0;
+}
+
+function getTotalIncome() {
+  return getConvertedMonthOperations()
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+}
+
+function getTotalExpense() {
+  return getConvertedMonthOperations()
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+}
+
+function getBalance() {
+  return getTotalIncome() - getTotalExpense();
+}
+
+function initMonthFilter() {
+  const actions = document.querySelector(".actions");
+
+  if (!actions) return;
+  if (document.getElementById("monthFilter")) return;
+
+  const select = document.createElement("select");
+  select.id = "monthFilter";
+
+  select.style.border = "none";
+  select.style.borderRadius = "12px";
+  select.style.background = "#1e293b";
+  select.style.color = "white";
+  select.style.padding = "13px 18px";
+  select.style.fontWeight = "800";
+  select.style.cursor = "pointer";
+
+  const now = new Date();
+
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+
+    const key =
+      date.getFullYear() +
+      "-" +
+      String(date.getMonth() + 1).padStart(2, "0");
+
+    const label = date.toLocaleDateString("ru-RU", {
+      month: "long",
+      year: "numeric"
+    });
+
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = label;
+
+    select.appendChild(option);
+  }
+
+  select.value = getSelectedMonthKey();
+
+  select.addEventListener("change", function() {
+    localStorage.setItem("financeSelectedMonth", select.value);
+    renderAll();
+  });
+
+  actions.prepend(select);
+}
+
+function renderCurrencyRatesPanel() {
+  if (document.getElementById("currencyRatesPanelLive")) return;
+
+  const main = document.querySelector(".main");
+  if (!main) return;
+
+  const rates = getRates();
+
+  const panel = document.createElement("section");
+  panel.id = "currencyRatesPanelLive";
+  panel.className = "operations-grid";
+
+  panel.innerHTML = `
+    <div class="form-box">
+      <div class="panel-title">💱 Курсы валют к PLN</div>
+
+      <div class="form-grid">
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">EUR → PLN</label>
+          <input id="rateEURLive" class="form-input" type="number" step="0.01" value="${rates.EUR}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">USD → PLN</label>
+          <input id="rateUSDLive" class="form-input" type="number" step="0.01" value="${rates.USD}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Crypto коэффициент</label>
+          <input id="rateCRYPTOLive" class="form-input" type="number" step="0.01" value="${rates.CRYPTO}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Stocks коэффициент</label>
+          <input id="rateSTOCKSLive" class="form-input" type="number" step="0.01" value="${rates.STOCKS}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="form-btn form-btn-green" onclick="saveCurrencyRatesLive()">Сохранить курсы</button>
+        <button class="form-btn" onclick="fetchLiveRatesFromAPI()">Загрузить курсы с API</button>
+      </div>
+
+      <div id="apiRatesStatusLive" style="margin-top:12px;color:#94a3b8;font-size:13px;">
+        Можно использовать ручные курсы или загрузить актуальные.
+      </div>
+    </div>
+
+    <div class="history-box">
+      <div class="panel-title">ℹ️ Пересчёт валют</div>
+      <div style="color:#94a3b8;line-height:1.7;">
+        EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
+        <br><br>
+        Например: 100 EUR × 4.30 = 430 PLN.
+      </div>
+    </div>
+  `;
+
+  const operationsGrid = document.querySelector(".operations-grid");
+
+  if (operationsGrid) {
+    main.insertBefore(panel, operationsGrid);
+  } else {
+    main.appendChild(panel);
+  }
+}
+
+function saveCurrencyRatesLive() {
+  const eur = Number(document.getElementById("rateEURLive").value);
+  const usd = Number(document.getElementById("rateUSDLive").value);
+  const crypto = Number(document.getElementById("rateCRYPTOLive").value);
+  const stocks = Number(document.getElementById("rateSTOCKSLive").value);
+
+  if (!eur || eur <= 0) {
+    alert("Введи корректный курс EUR");
+    return;
+  }
+
+  if (!usd || usd <= 0) {
+    alert("Введи корректный курс USD");
+    return;
+  }
+
+  if (!crypto || crypto <= 0) {
+    alert("Введи корректный коэффициент Crypto");
+    return;
+  }
+
+  if (!stocks || stocks <= 0) {
+    alert("Введи корректный коэффициент Stocks");
+    return;
+  }
+
+  localStorage.setItem("rate_EUR", String(eur));
+  localStorage.setItem("rate_USD", String(usd));
+  localStorage.setItem("rate_CRYPTO", String(crypto));
+  localStorage.setItem("rate_STOCKS", String(stocks));
+
+  renderAll();
+  alert("Курсы сохранены");
+}
+
 async function fetchLiveRatesFromAPI() {
-  const statusBox = document.getElementById("apiRatesStatusLive");
+  const status = document.getElementById("apiRatesStatusLive");
 
   function setStatus(text, color) {
-    if (statusBox) {
-      statusBox.textContent = text;
-      statusBox.style.color = color || "#94a3b8";
-    }
+    if (!status) return;
+    status.textContent = text;
+    status.style.color = color || "#94a3b8";
   }
 
   try {
-    setStatus("Загружаю актуальные курсы...", "#fbbf24");
+    setStatus("Загружаю курсы...", "#fbbf24");
 
     const eurResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/EUR/?format=json");
     const usdResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json");
@@ -645,27 +902,22 @@ async function fetchLiveRatesFromAPI() {
     const eurRate = Number(eurData.rates[0].mid);
     const usdRate = Number(usdData.rates[0].mid);
 
-    const cryptoResponse = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_last_updated_at=true"
-    );
+    let cryptoRate = Number(localStorage.getItem("rate_CRYPTO")) || 1;
 
-    if (!cryptoResponse.ok) {
-      throw new Error("CoinGecko API error");
+    try {
+      const cryptoResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+
+      if (cryptoResponse.ok) {
+        const cryptoData = await cryptoResponse.json();
+        cryptoRate = Number(cryptoData.bitcoin.usd) * usdRate;
+      }
+    } catch (cryptoError) {
+      console.warn("Crypto API not available", cryptoError);
     }
-
-    const cryptoData = await cryptoResponse.json();
-
-    const btcUsd = Number(cryptoData.bitcoin.usd);
-    const ethUsd = Number(cryptoData.ethereum.usd);
-
-    const btcPln = btcUsd * usdRate;
-    const ethPln = ethUsd * usdRate;
 
     localStorage.setItem("rate_EUR", String(eurRate));
     localStorage.setItem("rate_USD", String(usdRate));
-    localStorage.setItem("rate_CRYPTO", String(btcPln));
-    localStorage.setItem("rate_BTC", String(btcPln));
-    localStorage.setItem("rate_ETH", String(ethPln));
+    localStorage.setItem("rate_CRYPTO", String(cryptoRate));
 
     const eurInput = document.getElementById("rateEURLive");
     const usdInput = document.getElementById("rateUSDLive");
@@ -673,528 +925,25 @@ async function fetchLiveRatesFromAPI() {
 
     if (eurInput) eurInput.value = eurRate.toFixed(4);
     if (usdInput) usdInput.value = usdRate.toFixed(4);
-    if (cryptoInput) cryptoInput.value = btcPln.toFixed(2);
+    if (cryptoInput) cryptoInput.value = cryptoRate.toFixed(2);
 
     setStatus(
-      "Kursy pobrane: EUR " +
+      "Курсы загружены: EUR " +
       eurRate.toFixed(4) +
-      " PLN, USD " +
+      ", USD " +
       usdRate.toFixed(4) +
-      " PLN, BTC " +
-      Math.round(btcPln).toLocaleString("ru-RU") +
+      ", BTC " +
+      money(cryptoRate) +
       " PLN",
       "#22c55e"
     );
 
-    if (typeof renderAll === "function") {
-      renderAll();
-    }
-
-    if (typeof renderIncomeSourcesLive === "function") {
-      renderIncomeSourcesLive();
-    }
-
-    if (typeof updateCustomGoalLive === "function") {
-      updateCustomGoalLive();
-    }
-
-    if (typeof renderExpenseCalendarLive === "function") {
-      renderExpenseCalendarLive();
-    }
+    renderAll();
 
   } catch (error) {
     console.error(error);
-
-    setStatus(
-      "Не удалось загрузить курсы. Используются сохранённые или ручные значения.",
-      "#ef4444"
-    );
+    setStatus("Не удалось загрузить курсы. Используются ручные значения.", "#ef4444");
   }
-}
-
-function addApiRatesButtonLive() {
-  const ratesPanel = document.getElementById("currencyRatesPanelLive");
-
-  if (!ratesPanel) return;
-
-  if (document.getElementById("loadRatesApiButtonLive")) return;
-
-  const firstBox = ratesPanel.querySelector(".form-box");
-
-  if (!firstBox) return;
-
-  const info = document.createElement("div");
-
-  info.innerHTML = `
-    <div style="margin-top:16px;">
-      <button
-        id="loadRatesApiButtonLive"
-        onclick="fetchLiveRatesFromAPI()"
-        style="
-          padding:13px 18px;
-          border:none;
-          border-radius:12px;
-          background:#a855f7;
-          color:white;
-          font-weight:900;
-          cursor:pointer;
-          margin-right:10px;
-        "
-      >
-        Загрузить курсы с API
-      </button>
-
-      <span id="apiRatesStatusLive" style="color:#94a3b8;font-size:13px;">
-        Курсы можно обновить автоматически
-      </span>
-    </div>
-  `;
-
-  firstBox.appendChild(info);
-}
-
-window.addEventListener("load", function() {
-  setTimeout(function() {
-    addApiRatesButtonLive();
-  }, 300);
-});
-
-function renderExpenseCalendarLive() {
-  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  const firstDay = new Date(currentYear, currentMonth, 1);
-  const lastDay = new Date(currentYear, currentMonth + 1, 0);
-  const daysInMonth = lastDay.getDate();
-
-  const expensesByDay = {};
-
-  savedOperations
-    .filter(function(op) {
-      return op.type === "Расход" && op.currency === "PLN";
-    })
-    .forEach(function(op) {
-      if (!op.date) return;
-
-      const opDate = new Date(op.date);
-
-      if (
-        opDate.getFullYear() === currentYear &&
-        opDate.getMonth() === currentMonth
-      ) {
-        const day = opDate.getDate();
-
-        if (!expensesByDay[day]) {
-          expensesByDay[day] = 0;
-        }
-
-        expensesByDay[day] += Number(op.amount);
-      }
-    });
-
-  const calendarGrids = document.querySelectorAll(".calendar-grid");
-
-  calendarGrids.forEach(function(calendarGrid) {
-    calendarGrid.innerHTML = "";
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const amount = expensesByDay[day] || 0;
-
-      const cell = document.createElement("div");
-      cell.className = "day-cell";
-
-      if (amount > 0 && amount <= 300) {
-        cell.classList.add("day-low");
-      }
-
-      if (amount > 300 && amount <= 1000) {
-        cell.classList.add("day-mid");
-      }
-
-      if (amount > 1000) {
-        cell.classList.add("day-high");
-      }
-
-      cell.title = day + "." + String(currentMonth + 1).padStart(2, "0") + "." + currentYear + " — " + amount.toLocaleString("ru-RU") + " PLN";
-
-      cell.innerHTML = `
-        <span style="
-          font-size:10px;
-          color:white;
-          opacity:.85;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          height:100%;
-          width:100%;
-        ">
-          ${day}
-        </span>
-      `;
-
-      calendarGrid.appendChild(cell);
-    }
-  });
-}
-
-window.addEventListener("load", function() {
-  setTimeout(function() {
-    renderExpenseCalendarLive();
-  }, 100);
-});
-
-const oldAddOperationForCalendar = typeof addOperation === "function" ? addOperation : null;
-
-if (oldAddOperationForCalendar) {
-  addOperation = function() {
-    oldAddOperationForCalendar();
-
-    setTimeout(function() {
-      renderExpenseCalendarLive();
-    }, 100);
-  };
-}
-
-const oldDeleteOperationForCalendar = typeof deleteOperation === "function" ? deleteOperation : null;
-
-if (oldDeleteOperationForCalendar) {
-  deleteOperation = function(id) {
-    oldDeleteOperationForCalendar(id);
-
-    setTimeout(function() {
-      renderExpenseCalendarLive();
-    }, 100);
-  };
-}
-
-const oldClearOperationsForCalendar = typeof clearOperations === "function" ? clearOperations : null;
-
-if (oldClearOperationsForCalendar) {
-  clearOperations = function() {
-    oldClearOperationsForCalendar();
-
-    setTimeout(function() {
-      renderExpenseCalendarLive();
-    }, 100);
-  };
-}
-
-function getSavedGoalAmountLive() {
-  const savedGoal = Number(localStorage.getItem("financeGoalAmount"));
-
-  if (savedGoal && savedGoal > 0) {
-    return savedGoal;
-  }
-
-  return 100000;
-}
-
-function saveGoalAmountLive() {
-  const input = document.getElementById("goalAmountInputLive");
-
-  if (!input) return;
-
-  const value = Number(input.value);
-
-  if (!value || value <= 0) {
-    alert("Введи цель больше 0");
-    return;
-  }
-
-  localStorage.setItem("financeGoalAmount", String(value));
-
-  updateCustomGoalLive();
-}
-
-function getCurrentBalanceForGoalLive() {
-  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
-
-  const plnOperations = savedOperations.filter(function(op) {
-    return op.currency === "PLN";
-  });
-
-  const totalIncome = plnOperations
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  const totalExpense = plnOperations
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  if (plnOperations.length === 0) {
-    return 16046;
-  }
-
-  return totalIncome - totalExpense;
-}
-
-function formatGoalMoneyLive(value) {
-  return Math.round(value).toLocaleString("ru-RU");
-}
-
-function updateCustomGoalLive() {
-  const goalAmount = getSavedGoalAmountLive();
-  const balance = getCurrentBalanceForGoalLive();
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const remaining = Math.max(0, goalAmount - balance);
-
-  const kpiGoal = document.getElementById("kpiGoal");
-
-  if (kpiGoal) {
-    kpiGoal.textContent = goalPercent + "%";
-
-    const goalCard = kpiGoal.closest(".card");
-
-    if (goalCard) {
-      const note = goalCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent =
-          formatGoalMoneyLive(balance) + " / " + formatGoalMoneyLive(goalAmount);
-      }
-    }
-  }
-
-  const goalPanels = document.querySelectorAll(".panel");
-
-  goalPanels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Финансовая цель")) {
-      panel.innerHTML = `
-        <div class="panel-title">🎯 Финансовая цель</div>
-
-        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
-          <input
-            id="goalAmountInputLive"
-            type="number"
-            value="${goalAmount}"
-            placeholder="Введите цель"
-            style="
-              width:100%;
-              padding:13px 14px;
-              border-radius:12px;
-              border:1px solid rgba(255,255,255,0.08);
-              background:#0f172a;
-              color:white;
-              outline:none;
-              font-weight:700;
-            "
-          >
-
-          <button
-            onclick="saveGoalAmountLive()"
-            style="
-              padding:13px 18px;
-              border:none;
-              border-radius:12px;
-              background:#3b82f6;
-              color:white;
-              font-weight:900;
-              cursor:pointer;
-            "
-          >
-            Сохранить
-          </button>
-        </div>
-
-        <div class="big-number">
-          ${formatGoalMoneyLive(goalAmount)} PLN
-        </div>
-
-        <div class="progress">
-          <div class="progress-fill" style="width:${goalPercent}%"></div>
-        </div>
-
-        <div style="margin-top:16px;">
-          Накоплено: ${formatGoalMoneyLive(balance)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${formatGoalMoneyLive(remaining)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Прогресс: ${goalPercent}%
-        </div>
-      `;
-    }
-  });
-}
-
-window.addEventListener("load", function() {
-  setTimeout(function() {
-    updateCustomGoalLive();
-  }, 100);
-});
-
-window.addEventListener("load", function() {
-  setTimeout(function() {
-    updateCustomGoalLive();
-  }, 100);
-});
-
-const oldRenderAllForGoalInput = renderAll;
-
-renderAll = function() {
-  oldRenderAllForGoalInput();
-
-  setTimeout(function() {
-    updateCustomGoalLive();
-  }, 50);
-};
-
-function renderIncomeSourcesLive() {
-  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
-
-  const incomeOperations = savedOperations.filter(function(op) {
-    return op.type === "Доход" && op.currency === "PLN";
-  });
-
-  const incomeByCategory = {};
-
-  incomeOperations.forEach(function(op) {
-    if (!incomeByCategory[op.category]) {
-      incomeByCategory[op.category] = 0;
-    }
-
-    incomeByCategory[op.category] += Number(op.amount);
-  });
-
-  let incomeData = Object.keys(incomeByCategory)
-    .map(function(category) {
-      return {
-        label: category,
-        value: incomeByCategory[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    });
-
-  if (incomeData.length === 0) {
-    incomeData = [
-      { label: "Зарплата", value: 9195 },
-      { label: "Сбережения", value: 16000 },
-      { label: "Инвестиции", value: 0 },
-      { label: "Крипта", value: 0 },
-      { label: "Акции", value: 0 }
-    ];
-  }
-
-  const panels = document.querySelectorAll(".panel");
-
-  panels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Доходы по источникам")) {
-      panel.innerHTML = `
-        <div class="panel-title">💵 Доходы по источникам</div>
-      `;
-
-      incomeData.forEach(function(item) {
-        const row = document.createElement("div");
-        row.className = "list-row";
-
-        row.innerHTML = `
-          <span>${item.label}</span>
-          <span>${Math.round(item.value).toLocaleString("ru-RU")} PLN</span>
-        `;
-
-        panel.appendChild(row);
-      });
-    }
-  });
-}
-
-window.addEventListener("load", function() {
-  renderIncomeSourcesLive();
-});
-
-document.addEventListener("click", function() {
-  setTimeout(function() {
-    renderIncomeSourcesLive();
-  }, 100);
-});
-
-let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
-
-const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
-const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
-const GOAL_AMOUNT = 100000;
-
-window.addEventListener("load", function () {
-  renderAll();
-});
-
-window.addEventListener("resize", function () {
-  drawIncomeChart();
-  drawExpenseChart();
-  drawCashFlowChart();
-});
-
-function formatMoney(value) {
-  return Math.round(value).toLocaleString("ru-RU");
-}
-
-function getPLNOperations() {
-  return operations.filter(function(op) {
-    return op.currency === "PLN";
-  });
-}
-
-function getTotalIncome() {
-  return getPLNOperations()
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-}
-
-function getTotalExpense() {
-  return getPLNOperations()
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-}
-
-function getBalance() {
-  return getTotalIncome() - getTotalExpense();
-}
-
-function hasRealOperations() {
-  return getPLNOperations().length > 0;
-}
-
-function renderAll() {
-  updateDashboardKPI();
-  renderOperations();
-  renderTopExpenses();
-  updateGoalAndForecast();
-  drawIncomeChart();
-  drawExpenseChart();
-  drawCashFlowChart();
 }
 
 function updateDashboardKPI() {
@@ -1208,9 +957,11 @@ function updateDashboardKPI() {
     savingsRate = Math.round((balance / totalIncome) * 100);
   }
 
+  const goalAmount = getGoalAmount();
+
   const goalPercent = Math.max(
     0,
-    Math.min(100, Math.round((balance / GOAL_AMOUNT) * 100))
+    Math.min(100, Math.round((balance / goalAmount) * 100))
   );
 
   const incomeEl = document.getElementById("kpiIncome");
@@ -1219,19 +970,21 @@ function updateDashboardKPI() {
   const savingsEl = document.getElementById("kpiSavings");
   const goalEl = document.getElementById("kpiGoal");
 
-  if (incomeEl) incomeEl.textContent = formatMoney(totalIncome);
-  if (expenseEl) expenseEl.textContent = formatMoney(totalExpense);
-  if (balanceEl) balanceEl.textContent = formatMoney(balance);
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
   if (savingsEl) savingsEl.textContent = savingsRate + "%";
   if (goalEl) goalEl.textContent = goalPercent + "%";
 
-  const goalCard = goalEl ? goalEl.closest(".card") : null;
+  if (goalEl) {
+    const card = goalEl.closest(".card");
 
-  if (goalCard) {
-    const note = goalCard.querySelector(".card-note");
+    if (card) {
+      const note = card.querySelector(".card-note");
 
-    if (note) {
-      note.textContent = formatMoney(balance) + " / " + formatMoney(GOAL_AMOUNT);
+      if (note) {
+        note.textContent = money(balance) + " / " + money(goalAmount);
+      }
     }
   }
 }
@@ -1282,8 +1035,19 @@ function renderOperations() {
   }
 
   tbody.innerHTML = operations.slice(0, 30).map(function(op) {
+    const converted = convertToPLN(op);
     const typeClass = op.type === "Доход" ? "badge-income" : "badge-expense";
     const sign = op.type === "Доход" ? "+" : "-";
+
+    let amountText =
+      sign +
+      Number(op.amount).toLocaleString("ru-RU") +
+      " " +
+      op.currency;
+
+    if (op.currency !== "PLN") {
+      amountText += `<br><span style="color:#94a3b8;font-size:12px;">≈ ${money(converted.amount)} PLN</span>`;
+    }
 
     return `
       <tr>
@@ -1291,7 +1055,7 @@ function renderOperations() {
         <td class="${typeClass}">${op.type}</td>
         <td>${op.category}</td>
         <td>${op.name}</td>
-        <td>${sign}${Number(op.amount).toLocaleString("ru-RU")} ${op.currency}</td>
+        <td>${amountText}</td>
         <td>
           <button onclick="deleteOperation(${op.id})" style="
             background:#ef4444;
@@ -1352,10 +1116,10 @@ function exportOperations() {
 
 function getLastSixMonths() {
   const months = [];
-  const now = new Date();
+  const selectedDate = getSelectedMonthDate();
 
   for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - i, 1);
 
     months.push({
       key: date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0"),
@@ -1368,11 +1132,14 @@ function getLastSixMonths() {
 
 function buildMonthlyData() {
   const months = getLastSixMonths();
+  const convertedAll = operations.map(function(op) {
+    return convertToPLN(op);
+  });
 
   const income = months.map(function(month) {
-    return getPLNOperations()
+    return convertedAll
       .filter(function(op) {
-        return op.type === "Доход" && op.date.slice(0, 7) === month.key;
+        return op.type === "Доход" && op.date && op.date.slice(0, 7) === month.key;
       })
       .reduce(function(sum, op) {
         return sum + Number(op.amount);
@@ -1380,16 +1147,20 @@ function buildMonthlyData() {
   });
 
   const expense = months.map(function(month) {
-    return getPLNOperations()
+    return convertedAll
       .filter(function(op) {
-        return op.type === "Расход" && op.date.slice(0, 7) === month.key;
+        return op.type === "Расход" && op.date && op.date.slice(0, 7) === month.key;
       })
       .reduce(function(sum, op) {
         return sum + Number(op.amount);
       }, 0);
   });
 
-  if (!hasRealOperations()) {
+  const hasData =
+    income.some(function(v) { return v > 0; }) ||
+    expense.some(function(v) { return v > 0; });
+
+  if (!hasData && operations.length === 0) {
     return {
       labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
       income: DEMO_INCOME,
@@ -1409,7 +1180,7 @@ function buildMonthlyData() {
 function buildExpenseCategories() {
   const result = {};
 
-  getPLNOperations()
+  getConvertedMonthOperations()
     .filter(function(op) {
       return op.type === "Расход";
     })
@@ -1433,7 +1204,7 @@ function buildExpenseCategories() {
     })
     .slice(0, 6);
 
-  if (data.length === 0) {
+  if (data.length === 0 && operations.length === 0) {
     data = [
       { label: "Квартира", value: 3043 },
       { label: "Подарки", value: 2050 },
@@ -1441,6 +1212,12 @@ function buildExpenseCategories() {
       { label: "Бедренка", value: 1270 },
       { label: "Интернет", value: 50 },
       { label: "Зал", value: 50 }
+    ];
+  }
+
+  if (data.length === 0) {
+    data = [
+      { label: "Нет расходов", value: 1 }
     ];
   }
 
@@ -1486,47 +1263,85 @@ function renderTopExpenses() {
 
     row.innerHTML = `
       <span>${item.label}</span>
-      <span>${formatMoney(item.value)} PLN</span>
+      <span>${money(item.value)} PLN</span>
     `;
 
     topPanel.appendChild(row);
   });
 }
 
-function updateGoalAndForecast() {
+function renderIncomeSourcesLive() {
+  const incomeByCategory = {};
+
+  getConvertedMonthOperations()
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .forEach(function(op) {
+      if (!incomeByCategory[op.category]) {
+        incomeByCategory[op.category] = 0;
+      }
+
+      incomeByCategory[op.category] += Number(op.amount);
+    });
+
+  let incomeData = Object.keys(incomeByCategory)
+    .map(function(category) {
+      return {
+        label: category,
+        value: incomeByCategory[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    });
+
+  if (incomeData.length === 0 && operations.length === 0) {
+    incomeData = [
+      { label: "Зарплата", value: 9195 },
+      { label: "Сбережения", value: 16000 },
+      { label: "Инвестиции", value: 0 },
+      { label: "Крипта", value: 0 },
+      { label: "Акции", value: 0 }
+    ];
+  }
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Доходы по источникам")) {
+      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
+
+      incomeData.forEach(function(item) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>${item.label}</span>
+          <span>${money(item.value)} PLN</span>
+        `;
+
+        panel.appendChild(row);
+      });
+    }
+  });
+}
+
+function updateCustomGoalLive() {
+  const goalAmount = getGoalAmount();
   const balance = hasRealOperations() ? getBalance() : 16046;
-  const remaining = Math.max(0, GOAL_AMOUNT - balance);
 
   const goalPercent = Math.max(
     0,
-    Math.min(100, Math.round((balance / GOAL_AMOUNT) * 100))
+    Math.min(100, Math.round((balance / goalAmount) * 100))
   );
 
-  const monthlyData = buildMonthlyData();
+  const remaining = Math.max(0, goalAmount - balance);
 
-  const cashFlow = monthlyData.income.map(function(value, index) {
-    return value - monthlyData.expense[index];
-  });
-
-  const activeCashFlow = cashFlow.filter(function(value) {
-    return value !== 0;
-  });
-
-  let averageCashFlow = 0;
-
-  if (activeCashFlow.length > 0) {
-    averageCashFlow = Math.round(
-      activeCashFlow.reduce(function(sum, value) {
-        return sum + value;
-      }, 0) / activeCashFlow.length
-    );
-  }
-
-  if (!hasRealOperations()) {
-    averageCashFlow = 16046;
-  }
-
-  const forecastNextMonth = balance + averageCashFlow;
+  const kpiGoal = document.getElementById("kpiGoal");
+  if (kpiGoal) kpiGoal.textContent = goalPercent + "%";
 
   const panels = document.querySelectorAll(".panel");
 
@@ -1537,8 +1352,42 @@ function updateGoalAndForecast() {
       panel.innerHTML = `
         <div class="panel-title">🎯 Финансовая цель</div>
 
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
+          <input
+            id="goalAmountInputLive"
+            type="number"
+            value="${goalAmount}"
+            placeholder="Введите цель"
+            style="
+              width:100%;
+              padding:13px 14px;
+              border-radius:12px;
+              border:1px solid rgba(255,255,255,0.08);
+              background:#0f172a;
+              color:white;
+              outline:none;
+              font-weight:700;
+            "
+          >
+
+          <button
+            onclick="saveGoalAmountLive()"
+            style="
+              padding:13px 18px;
+              border:none;
+              border-radius:12px;
+              background:#3b82f6;
+              color:white;
+              font-weight:900;
+              cursor:pointer;
+            "
+          >
+            Сохранить
+          </button>
+        </div>
+
         <div class="big-number">
-          ${formatMoney(GOAL_AMOUNT)} PLN
+          ${money(goalAmount)} PLN
         </div>
 
         <div class="progress">
@@ -1546,11 +1395,11 @@ function updateGoalAndForecast() {
         </div>
 
         <div style="margin-top:16px;">
-          Накоплено: ${formatMoney(balance)} PLN
+          Накоплено: ${money(balance)} PLN
         </div>
 
         <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${formatMoney(remaining)} PLN
+          Осталось: ${money(remaining)} PLN
         </div>
 
         <div style="margin-top:8px;color:#94a3b8;">
@@ -1559,10 +1408,116 @@ function updateGoalAndForecast() {
       `;
     }
   });
+}
 
-  const forecastCards = document.querySelectorAll(".mini-card");
+function saveGoalAmountLive() {
+  const input = document.getElementById("goalAmountInputLive");
+  if (!input) return;
 
-  forecastCards.forEach(function(card) {
+  const value = Number(input.value);
+
+  if (!value || value <= 0) {
+    alert("Введи цель больше 0");
+    return;
+  }
+
+  localStorage.setItem("financeGoalAmount", String(value));
+  renderAll();
+}
+
+function renderExpenseCalendarLive() {
+  const selectedDate = getSelectedMonthDate();
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const expensesByDay = {};
+
+  getConvertedMonthOperations()
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .forEach(function(op) {
+      const day = Number(op.date.slice(8, 10));
+
+      if (!expensesByDay[day]) {
+        expensesByDay[day] = 0;
+      }
+
+      expensesByDay[day] += Number(op.amount);
+    });
+
+  const calendarGrids = document.querySelectorAll(".calendar-grid");
+
+  calendarGrids.forEach(function(grid) {
+    grid.innerHTML = "";
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const amount = expensesByDay[day] || 0;
+
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+
+      if (amount > 0 && amount <= 300) cell.classList.add("day-low");
+      if (amount > 300 && amount <= 1000) cell.classList.add("day-mid");
+      if (amount > 1000) cell.classList.add("day-high");
+
+      cell.title =
+        day +
+        "." +
+        String(month + 1).padStart(2, "0") +
+        "." +
+        year +
+        " — " +
+        money(amount) +
+        " PLN";
+
+      cell.innerHTML = `
+        <span style="
+          font-size:10px;
+          color:white;
+          opacity:.85;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          height:100%;
+          width:100%;
+        ">
+          ${day}
+        </span>
+      `;
+
+      grid.appendChild(cell);
+    }
+  });
+}
+
+function updateForecast() {
+  const balance = hasRealOperations() ? getBalance() : 16046;
+
+  const monthlyData = buildMonthlyData();
+
+  const flows = monthlyData.income.map(function(value, index) {
+    return value - monthlyData.expense[index];
+  });
+
+  const active = flows.filter(function(value) {
+    return value !== 0;
+  });
+
+  let average = 16046;
+
+  if (active.length > 0) {
+    average = Math.round(active.reduce(function(sum, value) {
+      return sum + value;
+    }, 0) / active.length);
+  }
+
+  const forecast = balance + average;
+
+  const cards = document.querySelectorAll(".mini-card");
+
+  cards.forEach(function(card) {
     const title = card.querySelector(".panel-title");
 
     if (title && title.textContent.includes("Прогноз баланса")) {
@@ -1570,16 +1525,16 @@ function updateGoalAndForecast() {
         <div class="panel-title">🔮 Прогноз баланса</div>
 
         <div class="forecast-number">
-          ${formatMoney(forecastNextMonth)} PLN
+          ${money(forecast)} PLN
         </div>
 
         <div class="forecast-text">
           Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
           <br><br>
-          <b>${formatMoney(forecastNextMonth)} PLN</b>
+          <b>${money(forecast)} PLN</b>
           <br><br>
           Средний чистый поток:
-          <b>${averageCashFlow >= 0 ? "+" : ""}${formatMoney(averageCashFlow)} PLN</b>
+          <b>${average >= 0 ? "+" : ""}${money(average)} PLN</b>
         </div>
       `;
     }
@@ -1596,6 +1551,7 @@ function prepareCanvas(id, fixedHeight) {
 
   canvas.width = width;
   canvas.height = height;
+
   canvas.style.width = "100%";
   canvas.style.height = height + "px";
   canvas.style.display = "block";
@@ -1746,7 +1702,7 @@ function drawExpenseChart() {
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 26px Segoe UI";
   ctx.textAlign = "center";
-  ctx.fillText(formatMoney(total), centerX, centerY - 4);
+  ctx.fillText(money(total), centerX, centerY - 4);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "13px Segoe UI";
@@ -1850,186 +1806,30 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
+function renderAll() {
+  initMonthFilter();
+  renderCurrencyRatesPanel();
+  updateDashboardKPI();
+  renderOperations();
+  renderTopExpenses();
+  renderIncomeSourcesLive();
+  updateCustomGoalLive();
+  updateForecast();
+  renderExpenseCalendarLive();
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+}
 
-(function () {
-  function money(value) {
-    return Math.round(Number(value) || 0).toLocaleString("ru-RU");
-  }
+window.addEventListener("load", function() {
+  renderAll();
+});
 
-  function getRatesFinal() {
-    return {
-      PLN: 1,
-      EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
-      USD: Number(localStorage.getItem("rate_USD")) || 3.9,
-      CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
-      STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
-    };
-  }
-
-  function convertToPLNFinal(op) {
-    const rates = getRatesFinal();
-    const rate = rates[op.currency] || 1;
-
-    return {
-      id: op.id,
-      name: op.name,
-      amount: Number(op.amount) * rate,
-      originalAmount: Number(op.amount),
-      type: op.type,
-      currency: "PLN",
-      originalCurrency: op.currency || "PLN",
-      category: op.category,
-      date: op.date
-    };
-  }
-
-  function getSelectedMonthKeyFinal() {
-    if (typeof getSelectedMonthKey === "function") {
-      return getSelectedMonthKey();
-    }
-
-    const now = new Date();
-
-    return (
-      now.getFullYear() +
-      "-" +
-      String(now.getMonth() + 1).padStart(2, "0")
-    );
-  }
-
-  function getMonthOperationsFinal() {
-    const selectedMonth = getSelectedMonthKeyFinal();
-
-    return operations.filter(function (op) {
-      return op.date && op.date.slice(0, 7) === selectedMonth;
-    });
-  }
-
-  function getConvertedMonthOperationsFinal() {
-    return getMonthOperationsFinal().map(function (op) {
-      return convertToPLNFinal(op);
-    });
-  }
-
-  window.getPLNOperations = function () {
-    return getConvertedMonthOperationsFinal();
-  };
-
-  window.getOperationsPLN = function () {
-    return getConvertedMonthOperationsFinal();
-  };
-
-  window.hasRealOperations = function () {
-    return getConvertedMonthOperationsFinal().length > 0;
-  };
-
-  window.getTotalIncome = function () {
-    return getConvertedMonthOperationsFinal()
-      .filter(function (op) {
-        return op.type === "Доход";
-      })
-      .reduce(function (sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  };
-
-  window.getTotalExpense = function () {
-    return getConvertedMonthOperationsFinal()
-      .filter(function (op) {
-        return op.type === "Расход";
-      })
-      .reduce(function (sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  };
-
-  window.getBalance = function () {
-    return getTotalIncome() - getTotalExpense();
-  };
-
-  window.buildExpenseCategories = function () {
-    const result = {};
-
-    getConvertedMonthOperationsFinal()
-      .filter(function (op) {
-        return op.type === "Расход";
-      })
-      .forEach(function (op) {
-        if (!result[op.category]) {
-          result[op.category] = 0;
-        }
-
-        result[op.category] += Number(op.amount);
-      });
-
-    let data = Object.keys(result)
-      .map(function (category) {
-        return {
-          label: category,
-          value: result[category]
-        };
-      })
-      .sort(function (a, b) {
-        return b.value - a.value;
-      })
-      .slice(0, 6);
-
-    if (data.length === 0 && operations.length === 0) {
-      data = [
-        { label: "Квартира", value: 3043 },
-        { label: "Подарки", value: 2050 },
-        { label: "Маме", value: 2000 },
-        { label: "Бедренка", value: 1270 },
-        { label: "Интернет", value: 50 },
-        { label: "Зал", value: 50 }
-      ];
-    }
-
-    if (data.length === 0) {
-      data = [
-        { label: "Нет расходов", value: 1 }
-      ];
-    }
-
-    const colors = [
-      "#3b82f6",
-      "#22c55e",
-      "#f59e0b",
-      "#a855f7",
-      "#06b6d4",
-      "#ef4444"
-    ];
-
-    return data.map(function (item, index) {
-      return {
-        label: item.label,
-        value: item.value,
-        color: colors[index % colors.length]
-      };
-    });
-  };
-
-  window.buildMonthlyData = function () {
-    const months = typeof getLastSixMonths === "function"
-      ? getLastSixMonths()
-      : [];
-
-    if (months.length === 0) {
-      return {
-        labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-        income: [3000, 5000, 8000, 12000, 18000, 25383],
-        expense: [1000, 2000, 3000, 5000, 7000, 9337]
-      };
-    }
-
-    const convertedAllOperations = operations.map(function (op) {
-      return convertToPLNFinal(op);
-    });
-
-    const income = months.map(function (month) {
-      return convertedAllOperations
-        .filter(function (op) {
-          return op.type === "Доход" && op.date && op.
+window.addEventListener("resize", function() {
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+});
 
 </script>
 
