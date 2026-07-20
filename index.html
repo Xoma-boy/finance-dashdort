@@ -619,6 +619,129 @@ canvas {
 </div>
 
 <script>
+function renderExpenseCalendarLive() {
+  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+
+  const expensesByDay = {};
+
+  savedOperations
+    .filter(function(op) {
+      return op.type === "Расход" && op.currency === "PLN";
+    })
+    .forEach(function(op) {
+      if (!op.date) return;
+
+      const opDate = new Date(op.date);
+
+      if (
+        opDate.getFullYear() === currentYear &&
+        opDate.getMonth() === currentMonth
+      ) {
+        const day = opDate.getDate();
+
+        if (!expensesByDay[day]) {
+          expensesByDay[day] = 0;
+        }
+
+        expensesByDay[day] += Number(op.amount);
+      }
+    });
+
+  const calendarGrids = document.querySelectorAll(".calendar-grid");
+
+  calendarGrids.forEach(function(calendarGrid) {
+    calendarGrid.innerHTML = "";
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const amount = expensesByDay[day] || 0;
+
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+
+      if (amount > 0 && amount <= 300) {
+        cell.classList.add("day-low");
+      }
+
+      if (amount > 300 && amount <= 1000) {
+        cell.classList.add("day-mid");
+      }
+
+      if (amount > 1000) {
+        cell.classList.add("day-high");
+      }
+
+      cell.title = day + "." + String(currentMonth + 1).padStart(2, "0") + "." + currentYear + " — " + amount.toLocaleString("ru-RU") + " PLN";
+
+      cell.innerHTML = `
+        <span style="
+          font-size:10px;
+          color:white;
+          opacity:.85;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          height:100%;
+          width:100%;
+        ">
+          ${day}
+        </span>
+      `;
+
+      calendarGrid.appendChild(cell);
+    }
+  });
+}
+
+window.addEventListener("load", function() {
+  setTimeout(function() {
+    renderExpenseCalendarLive();
+  }, 100);
+});
+
+const oldAddOperationForCalendar = typeof addOperation === "function" ? addOperation : null;
+
+if (oldAddOperationForCalendar) {
+  addOperation = function() {
+    oldAddOperationForCalendar();
+
+    setTimeout(function() {
+      renderExpenseCalendarLive();
+    }, 100);
+  };
+}
+
+const oldDeleteOperationForCalendar = typeof deleteOperation === "function" ? deleteOperation : null;
+
+if (oldDeleteOperationForCalendar) {
+  deleteOperation = function(id) {
+    oldDeleteOperationForCalendar(id);
+
+    setTimeout(function() {
+      renderExpenseCalendarLive();
+    }, 100);
+  };
+}
+
+const oldClearOperationsForCalendar = typeof clearOperations === "function" ? clearOperations : null;
+
+if (oldClearOperationsForCalendar) {
+  clearOperations = function() {
+    oldClearOperationsForCalendar();
+
+    setTimeout(function() {
+      renderExpenseCalendarLive();
+    }, 100);
+  };
+}
+
 function getSavedGoalAmountLive() {
   const savedGoal = Number(localStorage.getItem("financeGoalAmount"));
 
