@@ -619,6 +619,79 @@ canvas {
 </div>
 
 <script>
+function renderIncomeSourcesLive() {
+  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+  const incomeOperations = savedOperations.filter(function(op) {
+    return op.type === "Доход" && op.currency === "PLN";
+  });
+
+  const incomeByCategory = {};
+
+  incomeOperations.forEach(function(op) {
+    if (!incomeByCategory[op.category]) {
+      incomeByCategory[op.category] = 0;
+    }
+
+    incomeByCategory[op.category] += Number(op.amount);
+  });
+
+  let incomeData = Object.keys(incomeByCategory)
+    .map(function(category) {
+      return {
+        label: category,
+        value: incomeByCategory[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    });
+
+  if (incomeData.length === 0) {
+    incomeData = [
+      { label: "Зарплата", value: 9195 },
+      { label: "Сбережения", value: 16000 },
+      { label: "Инвестиции", value: 0 },
+      { label: "Крипта", value: 0 },
+      { label: "Акции", value: 0 }
+    ];
+  }
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Доходы по источникам")) {
+      panel.innerHTML = `
+        <div class="panel-title">💵 Доходы по источникам</div>
+      `;
+
+      incomeData.forEach(function(item) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>${item.label}</span>
+          <span>${Math.round(item.value).toLocaleString("ru-RU")} PLN</span>
+        `;
+
+        panel.appendChild(row);
+      });
+    }
+  });
+}
+
+window.addEventListener("load", function() {
+  renderIncomeSourcesLive();
+});
+
+document.addEventListener("click", function() {
+  setTimeout(function() {
+    renderIncomeSourcesLive();
+  }, 100);
+});
+
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
 const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
