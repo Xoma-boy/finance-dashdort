@@ -619,14 +619,28 @@ canvas {
 </div>
 
 <script>
-/* =========================
-   STORAGE / BASIC SETTINGS
-========================= */
+/* =====================================================
+   FINANCE DASHBOARD PRO - FULL SCRIPT
+   - Operations
+   - Delete operations
+   - Period filter
+   - Currency rates
+   - API rates
+   - Savings logic
+   - Goal from savings
+   - Total balance
+   - Dynamic charts
+   - Calendar
+===================================================== */
 
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
-const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
-const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
+const DEMO_INCOME = [];
+const DEMO_EXPENSE = [];
+
+/* =========================
+   HELPERS
+========================= */
 
 function money(value) {
   return Math.round(Number(value) || 0).toLocaleString("ru-RU");
@@ -635,6 +649,79 @@ function money(value) {
 function getGoalAmount() {
   return Number(localStorage.getItem("financeGoalAmount")) || 100000;
 }
+
+function getTodayISO() {
+  const now = new Date();
+
+  return (
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0")
+  );
+}
+
+function getCurrentMonthISO() {
+  const now = new Date();
+
+  return (
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0")
+  );
+}
+
+function getCurrentYearISO() {
+  return String(new Date().getFullYear());
+}
+
+/* =========================
+   SAVINGS LOGIC
+========================= */
+
+function isSavingsCategoryName(category) {
+  if (!category) return false;
+
+  const name = String(category).toLowerCase().trim();
+
+  return (
+    name === "накопления" ||
+    name === "сбережения" ||
+    name === "отложить" ||
+    name === "отложено" ||
+    name === "saving" ||
+    name === "savings"
+  );
+}
+
+function isSavingsOperation(op) {
+  return isSavingsCategoryName(op.category);
+}
+
+function addSavingsCategoriesToSelect() {
+  const select = document.getElementById("opCategory");
+  if (!select) return;
+
+  const existing = Array.from(select.options).map(function(option) {
+    return option.value;
+  });
+
+  const categories = ["Накопления", "Сбережения", "Отложить"];
+
+  categories.forEach(function(category) {
+    if (!existing.includes(category)) {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      select.appendChild(option);
+    }
+  });
+}
+
+/* =========================
+   CURRENCY RATES
+========================= */
 
 function getRates() {
   return {
@@ -663,35 +750,181 @@ function convertToPLN(op) {
   };
 }
 
+function renderCurrencyRatesPanel() {
+  if (document.getElementById("currencyRatesPanelLive")) return;
+
+  const main = document.querySelector(".main");
+  if (!main) return;
+
+  const rates = getRates();
+
+  const panel = document.createElement("section");
+  panel.id = "currencyRatesPanelLive";
+  panel.className = "operations-grid";
+
+  panel.innerHTML = `
+    <div class="form-box">
+      <div class="panel-title">💱 Курсы валют к PLN</div>
+
+      <div class="form-grid">
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">EUR → PLN</label>
+          <input id="rateEURLive" class="form-input" type="number" step="0.01" value="${rates.EUR}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">USD → PLN</label>
+          <input id="rateUSDLive" class="form-input" type="number" step="0.01" value="${rates.USD}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Crypto коэффициент</label>
+          <input id="rateCRYPTOLive" class="form-input" type="number" step="0.01" value="${rates.CRYPTO}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Stocks коэффициент</label>
+          <input id="rateSTOCKSLive" class="form-input" type="number" step="0.01" value="${rates.STOCKS}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="form-btn form-btn-green" onclick="saveCurrencyRatesLive()">Сохранить курсы</button>
+        <button class="form-btn" onclick="fetchLiveRatesFromAPI()">Загрузить курсы с API</button>
+      </div>
+
+      <div id="apiRatesStatusLive" style="margin-top:12px;color:#94a3b8;font-size:13px;">
+        Можно использовать ручные курсы или загрузить актуальные.
+      </div>
+    </div>
+
+    <div class="history-box">
+      <div class="panel-title">ℹ️ Пересчёт валют</div>
+
+      <div style="color:#94a3b8;line-height:1.7;">
+        EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
+        <br><br>
+        Например: 100 EUR × 4.30 = 430 PLN.
+      </div>
+    </div>
+  `;
+
+  const operationsGrid = document.querySelector(".operations-grid");
+
+  if (operationsGrid) {
+    main.insertBefore(panel, operationsGrid);
+  } else {
+    main.appendChild(panel);
+  }
+}
+
+function saveCurrencyRatesLive() {
+  const eur = Number(document.getElementById("rateEURLive").value);
+  const usd = Number(document.getElementById("rateUSDLive").value);
+  const crypto = Number(document.getElementById("rateCRYPTOLive").value);
+  const stocks = Number(document.getElementById("rateSTOCKSLive").value);
+
+  if (!eur || eur <= 0) {
+    alert("Введи корректный курс EUR");
+    return;
+  }
+
+  if (!usd || usd <= 0) {
+    alert("Введи корректный курс USD");
+    return;
+  }
+
+  if (!crypto || crypto <= 0) {
+    alert("Введи корректный коэффициент Crypto");
+    return;
+  }
+
+  if (!stocks || stocks <= 0) {
+    alert("Введи корректный коэффициент Stocks");
+    return;
+  }
+
+  localStorage.setItem("rate_EUR", String(eur));
+  localStorage.setItem("rate_USD", String(usd));
+  localStorage.setItem("rate_CRYPTO", String(crypto));
+  localStorage.setItem("rate_STOCKS", String(stocks));
+
+  renderAll();
+  alert("Курсы сохранены");
+}
+
+async function fetchLiveRatesFromAPI() {
+  const status = document.getElementById("apiRatesStatusLive");
+
+  function setStatus(text, color) {
+    if (!status) return;
+    status.textContent = text;
+    status.style.color = color || "#94a3b8";
+  }
+
+  try {
+    setStatus("Загружаю курсы...", "#fbbf24");
+
+    const eurResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/EUR/?format=json");
+    const usdResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json");
+
+    if (!eurResponse.ok || !usdResponse.ok) {
+      throw new Error("NBP API error");
+    }
+
+    const eurData = await eurResponse.json();
+    const usdData = await usdResponse.json();
+
+    const eurRate = Number(eurData.rates[0].mid);
+    const usdRate = Number(usdData.rates[0].mid);
+
+    let cryptoRate = Number(localStorage.getItem("rate_CRYPTO")) || 1;
+
+    try {
+      const cryptoResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+
+      if (cryptoResponse.ok) {
+        const cryptoData = await cryptoResponse.json();
+        cryptoRate = Number(cryptoData.bitcoin.usd) * usdRate;
+      }
+    } catch (cryptoError) {
+      console.warn("Crypto API недоступен", cryptoError);
+    }
+
+    localStorage.setItem("rate_EUR", String(eurRate));
+    localStorage.setItem("rate_USD", String(usdRate));
+    localStorage.setItem("rate_CRYPTO", String(cryptoRate));
+
+    const eurInput = document.getElementById("rateEURLive");
+    const usdInput = document.getElementById("rateUSDLive");
+    const cryptoInput = document.getElementById("rateCRYPTOLive");
+
+    if (eurInput) eurInput.value = eurRate.toFixed(4);
+    if (usdInput) usdInput.value = usdRate.toFixed(4);
+    if (cryptoInput) cryptoInput.value = cryptoRate.toFixed(2);
+
+    setStatus(
+      "Курсы загружены: EUR " +
+      eurRate.toFixed(4) +
+      ", USD " +
+      usdRate.toFixed(4) +
+      ", BTC " +
+      money(cryptoRate) +
+      " PLN",
+      "#22c55e"
+    );
+
+    renderAll();
+
+  } catch (error) {
+    console.error(error);
+    setStatus("Не удалось загрузить курсы. Используются ручные значения.", "#ef4444");
+  }
+}
+
 /* =========================
    PERIOD FILTER
 ========================= */
-
-function getTodayISO() {
-  const now = new Date();
-
-  return (
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0")
-  );
-}
-
-function getCurrentMonthISO() {
-  const now = new Date();
-
-  return (
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
-}
-
-function getCurrentYearISO() {
-  return String(new Date().getFullYear());
-}
 
 function getPeriodMode() {
   return localStorage.getItem("financePeriodMode") || "month";
@@ -904,246 +1137,131 @@ function getConvertedPeriodOperations() {
   });
 }
 
-function getSelectedMonthKey() {
-  const mode = getPeriodMode();
-
-  if (mode === "month") {
-    return localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
-  }
-
-  if (mode === "day") {
-    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
-    return selectedDay.slice(0, 7);
-  }
-
-  if (mode === "custom") {
-    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
-    return start.slice(0, 7);
-  }
-
-  return getCurrentMonthISO();
-}
-
-function getSelectedMonthDate() {
-  const key = getSelectedMonthKey();
-  const parts = key.split("-");
-
-  return new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
-}
-
 /* =========================
-   MAIN DATA FUNCTIONS
+   DATA TOTALS
 ========================= */
 
-function getPLNOperations() {
-  return getConvertedPeriodOperations();
+function getIncomeOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return op.type === "Доход" && !isSavingsOperation(op);
+  });
 }
 
-function getOperationsPLN() {
-  return getConvertedPeriodOperations();
+function getExpenseOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return op.type === "Расход" && !isSavingsOperation(op);
+  });
+}
+
+function getSavingsOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return isSavingsOperation(op);
+  });
+}
+
+function getTotalIncome() {
+  return getIncomeOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalExpense() {
+  return getExpenseOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalSavings() {
+  return getSavingsOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getBalance() {
+  return getTotalIncome() - getTotalExpense() - getTotalSavings();
+}
+
+function getTotalBalance() {
+  return getBalance() + getTotalSavings();
 }
 
 function hasRealOperations() {
   return getConvertedPeriodOperations().length > 0;
 }
 
-function getTotalIncome() {
-  return getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-}
-
-function getTotalExpense() {
-  return getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-}
-
-function getBalance() {
-  return getTotalIncome() - getTotalExpense();
-}
-
 /* =========================
-   RATES PANEL
+   KPI
 ========================= */
 
-function renderCurrencyRatesPanel() {
-  if (document.getElementById("currencyRatesPanelLive")) return;
+function ensureTotalBalanceCardExists() {
+  const grid = document.querySelector(".kpi-grid");
+  if (!grid) return;
 
-  const main = document.querySelector(".main");
-  if (!main) return;
+  if (document.getElementById("kpiTotalBalance")) return;
 
-  const rates = getRates();
+  const card = document.createElement("div");
+  card.className = "card";
 
-  const panel = document.createElement("section");
-  panel.id = "currencyRatesPanelLive";
-  panel.className = "operations-grid";
-
-  panel.innerHTML = `
-    <div class="form-box">
-      <div class="panel-title">💱 Курсы валют к PLN</div>
-
-      <div class="form-grid">
-        <div>
-          <label style="color:#94a3b8;font-size:13px;">EUR → PLN</label>
-          <input id="rateEURLive" class="form-input" type="number" step="0.01" value="${rates.EUR}">
-        </div>
-
-        <div>
-          <label style="color:#94a3b8;font-size:13px;">USD → PLN</label>
-          <input id="rateUSDLive" class="form-input" type="number" step="0.01" value="${rates.USD}">
-        </div>
-
-        <div>
-          <label style="color:#94a3b8;font-size:13px;">Crypto коэффициент</label>
-          <input id="rateCRYPTOLive" class="form-input" type="number" step="0.01" value="${rates.CRYPTO}">
-        </div>
-
-        <div>
-          <label style="color:#94a3b8;font-size:13px;">Stocks коэффициент</label>
-          <input id="rateSTOCKSLive" class="form-input" type="number" step="0.01" value="${rates.STOCKS}">
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button class="form-btn form-btn-green" onclick="saveCurrencyRatesLive()">Сохранить курсы</button>
-        <button class="form-btn" onclick="fetchLiveRatesFromAPI()">Загрузить курсы с API</button>
-      </div>
-
-      <div id="apiRatesStatusLive" style="margin-top:12px;color:#94a3b8;font-size:13px;">
-        Можно использовать ручные курсы или загрузить актуальные.
-      </div>
-    </div>
-
-    <div class="history-box">
-      <div class="panel-title">ℹ️ Пересчёт валют</div>
-
-      <div style="color:#94a3b8;line-height:1.7;">
-        EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
-        <br><br>
-        Например: 100 EUR × 4.30 = 430 PLN.
-      </div>
-    </div>
+  card.innerHTML = `
+    <div class="card-label">Общий баланс</div>
+    <div id="kpiTotalBalance" class="card-value blue">0</div>
+    <div class="card-note">Баланс + накопления</div>
   `;
 
-  const operationsGrid = document.querySelector(".operations-grid");
-
-  if (operationsGrid) {
-    main.insertBefore(panel, operationsGrid);
-  } else {
-    main.appendChild(panel);
-  }
+  grid.appendChild(card);
+  grid.style.gridTemplateColumns = "repeat(6, 1fr)";
 }
 
-function saveCurrencyRatesLive() {
-  const eur = Number(document.getElementById("rateEURLive").value);
-  const usd = Number(document.getElementById("rateUSDLive").value);
-  const crypto = Number(document.getElementById("rateCRYPTOLive").value);
-  const stocks = Number(document.getElementById("rateSTOCKSLive").value);
+function updateDashboardKPI() {
+  const totalIncome = getTotalIncome();
+  const totalExpense = getTotalExpense();
+  const totalSavings = getTotalSavings();
+  const balance = getBalance();
+  const totalBalance = getTotalBalance();
 
-  if (!eur || eur <= 0) {
-    alert("Введи корректный курс EUR");
-    return;
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((totalSavings / totalIncome) * 100);
   }
 
-  if (!usd || usd <= 0) {
-    alert("Введи корректный курс USD");
-    return;
-  }
+  const goalAmount = getGoalAmount();
 
-  if (!crypto || crypto <= 0) {
-    alert("Введи корректный коэффициент Crypto");
-    return;
-  }
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
+  );
 
-  if (!stocks || stocks <= 0) {
-    alert("Введи корректный коэффициент Stocks");
-    return;
-  }
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+  const totalBalanceEl = document.getElementById("kpiTotalBalance");
 
-  localStorage.setItem("rate_EUR", String(eur));
-  localStorage.setItem("rate_USD", String(usd));
-  localStorage.setItem("rate_CRYPTO", String(crypto));
-  localStorage.setItem("rate_STOCKS", String(stocks));
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
+  if (savingsEl) savingsEl.textContent = money(totalSavings);
+  if (goalEl) goalEl.textContent = goalPercent + "%";
+  if (totalBalanceEl) totalBalanceEl.textContent = money(totalBalance);
 
-  renderAll();
-  alert("Курсы сохранены");
-}
-
-async function fetchLiveRatesFromAPI() {
-  const status = document.getElementById("apiRatesStatusLive");
-
-  function setStatus(text, color) {
-    if (!status) return;
-    status.textContent = text;
-    status.style.color = color || "#94a3b8";
-  }
-
-  try {
-    setStatus("Загружаю курсы...", "#fbbf24");
-
-    const eurResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/EUR/?format=json");
-    const usdResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json");
-
-    if (!eurResponse.ok || !usdResponse.ok) {
-      throw new Error("NBP API error");
+  if (savingsEl) {
+    const savingsCard = savingsEl.closest(".card");
+    if (savingsCard) {
+      const note = savingsCard.querySelector(".card-note");
+      if (note) note.textContent = savingsRate + "% от дохода";
     }
+  }
 
-    const eurData = await eurResponse.json();
-    const usdData = await usdResponse.json();
-
-    const eurRate = Number(eurData.rates[0].mid);
-    const usdRate = Number(usdData.rates[0].mid);
-
-    let cryptoRate = Number(localStorage.getItem("rate_CRYPTO")) || 1;
-
-    try {
-      const cryptoResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
-
-      if (cryptoResponse.ok) {
-        const cryptoData = await cryptoResponse.json();
-        cryptoRate = Number(cryptoData.bitcoin.usd) * usdRate;
+  if (goalEl) {
+    const goalCard = goalEl.closest(".card");
+    if (goalCard) {
+      const note = goalCard.querySelector(".card-note");
+      if (note) {
+        note.textContent = money(totalSavings) + " / " + money(goalAmount);
       }
-    } catch (cryptoError) {
-      console.warn("Crypto API недоступен", cryptoError);
     }
-
-    localStorage.setItem("rate_EUR", String(eurRate));
-    localStorage.setItem("rate_USD", String(usdRate));
-    localStorage.setItem("rate_CRYPTO", String(cryptoRate));
-
-    const eurInput = document.getElementById("rateEURLive");
-    const usdInput = document.getElementById("rateUSDLive");
-    const cryptoInput = document.getElementById("rateCRYPTOLive");
-
-    if (eurInput) eurInput.value = eurRate.toFixed(4);
-    if (usdInput) usdInput.value = usdRate.toFixed(4);
-    if (cryptoInput) cryptoInput.value = cryptoRate.toFixed(2);
-
-    setStatus(
-      "Курсы загружены: EUR " +
-      eurRate.toFixed(4) +
-      ", USD " +
-      usdRate.toFixed(4) +
-      ", BTC " +
-      money(cryptoRate) +
-      " PLN",
-      "#22c55e"
-    );
-
-    renderAll();
-
-  } catch (error) {
-    console.error(error);
-    setStatus("Не удалось загрузить курсы. Используются ручные значения.", "#ef4444");
   }
 }
 
@@ -1279,68 +1397,21 @@ function exportOperations() {
 }
 
 /* =========================
-   KPI / LISTS
+   LISTS
 ========================= */
-
-function updateDashboardKPI() {
-  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
-  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
-  const balance = totalIncome - totalExpense;
-
-  let savingsRate = 0;
-
-  if (totalIncome > 0) {
-    savingsRate = Math.round((balance / totalIncome) * 100);
-  }
-
-  const goalAmount = getGoalAmount();
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const incomeEl = document.getElementById("kpiIncome");
-  const expenseEl = document.getElementById("kpiExpense");
-  const balanceEl = document.getElementById("kpiBalance");
-  const savingsEl = document.getElementById("kpiSavings");
-  const goalEl = document.getElementById("kpiGoal");
-
-  if (incomeEl) incomeEl.textContent = money(totalIncome);
-  if (expenseEl) expenseEl.textContent = money(totalExpense);
-  if (balanceEl) balanceEl.textContent = money(balance);
-  if (savingsEl) savingsEl.textContent = savingsRate + "%";
-  if (goalEl) goalEl.textContent = goalPercent + "%";
-
-  if (goalEl) {
-    const card = goalEl.closest(".card");
-
-    if (card) {
-      const note = card.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = money(balance) + " / " + money(goalAmount);
-      }
-    }
-  }
-}
 
 function buildExpenseCategories() {
   const result = {};
 
-  getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .forEach(function(op) {
-      if (!result[op.category]) {
-        result[op.category] = 0;
-      }
+  getExpenseOperations().forEach(function(op) {
+    if (!result[op.category]) {
+      result[op.category] = 0;
+    }
 
-      result[op.category] += Number(op.amount);
-    });
+    result[op.category] += Number(op.amount);
+  });
 
-  let data = Object.keys(result)
+  const data = Object.keys(result)
     .map(function(category) {
       return {
         label: category,
@@ -1351,23 +1422,6 @@ function buildExpenseCategories() {
       return b.value - a.value;
     })
     .slice(0, 6);
-
-  if (data.length === 0 && operations.length === 0) {
-    data = [
-      { label: "Квартира", value: 3043 },
-      { label: "Подарки", value: 2050 },
-      { label: "Маме", value: 2000 },
-      { label: "Бедренка", value: 1270 },
-      { label: "Интернет", value: 50 },
-      { label: "Зал", value: 50 }
-    ];
-  }
-
-  if (data.length === 0) {
-    data = [
-      { label: "Нет расходов", value: 1 }
-    ];
-  }
 
   const colors = [
     "#3b82f6",
@@ -1405,6 +1459,14 @@ function renderTopExpenses() {
 
   const expenseData = buildExpenseCategories().slice(0, 5);
 
+  if (expenseData.length === 0) {
+    const row = document.createElement("div");
+    row.className = "list-row";
+    row.innerHTML = `<span>Нет расходов</span><span>0 PLN</span>`;
+    topPanel.appendChild(row);
+    return;
+  }
+
   expenseData.forEach(function(item) {
     const row = document.createElement("div");
     row.className = "list-row";
@@ -1421,19 +1483,15 @@ function renderTopExpenses() {
 function renderIncomeSourcesLive() {
   const incomeByCategory = {};
 
-  getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .forEach(function(op) {
-      if (!incomeByCategory[op.category]) {
-        incomeByCategory[op.category] = 0;
-      }
+  getIncomeOperations().forEach(function(op) {
+    if (!incomeByCategory[op.category]) {
+      incomeByCategory[op.category] = 0;
+    }
 
-      incomeByCategory[op.category] += Number(op.amount);
-    });
+    incomeByCategory[op.category] += Number(op.amount);
+  });
 
-  let incomeData = Object.keys(incomeByCategory)
+  const incomeData = Object.keys(incomeByCategory)
     .map(function(category) {
       return {
         label: category,
@@ -1444,16 +1502,6 @@ function renderIncomeSourcesLive() {
       return b.value - a.value;
     });
 
-  if (incomeData.length === 0 && operations.length === 0) {
-    incomeData = [
-      { label: "Зарплата", value: 9195 },
-      { label: "Сбережения", value: 16000 },
-      { label: "Инвестиции", value: 0 },
-      { label: "Крипта", value: 0 },
-      { label: "Акции", value: 0 }
-    ];
-  }
-
   const panels = document.querySelectorAll(".panel");
 
   panels.forEach(function(panel) {
@@ -1461,6 +1509,14 @@ function renderIncomeSourcesLive() {
 
     if (title && title.textContent.includes("Доходы по источникам")) {
       panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
+
+      if (incomeData.length === 0) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `<span>Нет доходов</span><span>0 PLN</span>`;
+        panel.appendChild(row);
+        return;
+      }
 
       incomeData.forEach(function(item) {
         const row = document.createElement("div");
@@ -1483,14 +1539,14 @@ function renderIncomeSourcesLive() {
 
 function updateCustomGoalLive() {
   const goalAmount = getGoalAmount();
-  const balance = hasRealOperations() ? getBalance() : 16046;
+  const totalSavings = getTotalSavings();
 
   const goalPercent = Math.max(
     0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
+    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
   );
 
-  const remaining = Math.max(0, goalAmount - balance);
+  const remaining = Math.max(0, goalAmount - totalSavings);
 
   const kpiGoal = document.getElementById("kpiGoal");
   if (kpiGoal) kpiGoal.textContent = goalPercent + "%";
@@ -1547,7 +1603,7 @@ function updateCustomGoalLive() {
         </div>
 
         <div style="margin-top:16px;">
-          Накоплено: ${money(balance)} PLN
+          Накоплено: ${money(totalSavings)} PLN
         </div>
 
         <div style="margin-top:8px;color:#94a3b8;">
@@ -1578,7 +1634,7 @@ function saveGoalAmountLive() {
 }
 
 function updateForecast() {
-  const balance = hasRealOperations() ? getBalance() : 16046;
+  const totalBalance = getTotalBalance();
   const data = buildMonthlyData();
 
   const flows = data.income.map(function(value, index) {
@@ -1589,7 +1645,7 @@ function updateForecast() {
     return value !== 0;
   });
 
-  let average = 16046;
+  let average = 0;
 
   if (active.length > 0) {
     average = Math.round(active.reduce(function(sum, value) {
@@ -1597,7 +1653,7 @@ function updateForecast() {
     }, 0) / active.length);
   }
 
-  const forecast = balance + average;
+  const forecast = totalBalance + average;
 
   const cards = document.querySelectorAll(".mini-card");
 
@@ -1613,7 +1669,7 @@ function updateForecast() {
         </div>
 
         <div class="forecast-text">
-          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
+          Если текущий темп сохранится, через 1 месяц общий баланс может быть примерно:
           <br><br>
           <b>${money(forecast)} PLN</b>
           <br><br>
@@ -1629,6 +1685,33 @@ function updateForecast() {
    CALENDAR
 ========================= */
 
+function getSelectedMonthKey() {
+  const mode = getPeriodMode();
+
+  if (mode === "month") {
+    return localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+  }
+
+  if (mode === "day") {
+    const day = localStorage.getItem("financePeriodDay") || getTodayISO();
+    return day.slice(0, 7);
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    return start.slice(0, 7);
+  }
+
+  return getCurrentMonthISO();
+}
+
+function getSelectedMonthDate() {
+  const key = getSelectedMonthKey();
+  const parts = key.split("-");
+
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+}
+
 function renderExpenseCalendarLive() {
   const selectedDate = getSelectedMonthDate();
   const year = selectedDate.getFullYear();
@@ -1637,9 +1720,9 @@ function renderExpenseCalendarLive() {
 
   const expensesByDay = {};
 
-  getConvertedPeriodOperations()
+  getExpenseOperations()
     .filter(function(op) {
-      return op.type === "Расход" && op.date && op.date.slice(0, 7) === getSelectedMonthKey();
+      return op.date && op.date.slice(0, 7) === getSelectedMonthKey();
     })
     .forEach(function(op) {
       const day = Number(op.date.slice(8, 10));
@@ -1706,6 +1789,14 @@ function buildMonthlyData() {
     return convertToPLN(op);
   });
 
+  function isIncomeChart(op) {
+    return op.type === "Доход" && !isSavingsOperation(op);
+  }
+
+  function isExpenseChart(op) {
+    return op.type === "Расход" && !isSavingsOperation(op);
+  }
+
   if (mode === "day") {
     const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
 
@@ -1717,18 +1808,14 @@ function buildMonthlyData() {
       labels: [selectedDay],
       income: [
         dayOps
-          .filter(function(op) {
-            return op.type === "Доход";
-          })
+          .filter(isIncomeChart)
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
           }, 0)
       ],
       expense: [
         dayOps
-          .filter(function(op) {
-            return op.type === "Расход";
-          })
+          .filter(isExpenseChart)
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
           }, 0)
@@ -1753,7 +1840,7 @@ function buildMonthlyData() {
       income.push(
         convertedAll
           .filter(function(op) {
-            return op.type === "Доход" && op.date && op.date.slice(0, 7) === key;
+            return isIncomeChart(op) && op.date && op.date.slice(0, 7) === key;
           })
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
@@ -1763,7 +1850,7 @@ function buildMonthlyData() {
       expense.push(
         convertedAll
           .filter(function(op) {
-            return op.type === "Расход" && op.date && op.date.slice(0, 7) === key;
+            return isExpenseChart(op) && op.date && op.date.slice(0, 7) === key;
           })
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
@@ -1797,7 +1884,7 @@ function buildMonthlyData() {
       income.push(
         convertedAll
           .filter(function(op) {
-            return op.type === "Доход" && op.date === key;
+            return isIncomeChart(op) && op.date === key;
           })
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
@@ -1807,7 +1894,7 @@ function buildMonthlyData() {
       expense.push(
         convertedAll
           .filter(function(op) {
-            return op.type === "Расход" && op.date === key;
+            return isExpenseChart(op) && op.date === key;
           })
           .reduce(function(sum, op) {
             return sum + Number(op.amount);
@@ -1852,7 +1939,7 @@ function buildMonthlyData() {
         income.push(
           convertedAll
             .filter(function(op) {
-              return op.type === "Доход" && op.date === key;
+              return isIncomeChart(op) && op.date === key;
             })
             .reduce(function(sum, op) {
               return sum + Number(op.amount);
@@ -1862,7 +1949,7 @@ function buildMonthlyData() {
         expense.push(
           convertedAll
             .filter(function(op) {
-              return op.type === "Расход" && op.date === key;
+              return isExpenseChart(op) && op.date === key;
             })
             .reduce(function(sum, op) {
               return sum + Number(op.amount);
@@ -1878,52 +1965,12 @@ function buildMonthlyData() {
     }
   }
 
-  const months = [];
-  const now = new Date();
-
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-
-    months.push({
-      key: date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0"),
-      label: date.toLocaleDateString("ru-RU", { month: "short" })
-    });
-  }
-
-  const income = months.map(function(month) {
-    return convertedAll
-      .filter(function(op) {
-        return op.type === "Доход" && op.date && op.date.slice(0, 7) === month.key;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  });
-
-  const expense = months.map(function(month) {
-    return convertedAll
-      .filter(function(op) {
-        return op.type === "Расход" && op.date && op.date.slice(0, 7) === month.key;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-  });
-
-  if (operations.length === 0) {
-    return {
-      labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-      income: DEMO_INCOME,
-      expense: DEMO_EXPENSE
-    };
-  }
+  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
 
   return {
-    labels: months.map(function(month) {
-      return month.label;
-    }),
-    income: income,
-    expense: expense
+    labels: labels,
+    income: labels.map(function() { return 0; }),
+    expense: labels.map(function() { return 0; })
   };
 }
 
@@ -2068,7 +2115,16 @@ function drawExpenseChart() {
     return sum + item.value;
   }, 0);
 
-  if (total <= 0) return;
+  if (total <= 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 22px Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillText("0 PLN", width / 2, 145);
+
+    ctx.font = "13px Segoe UI";
+    ctx.fillText("Нет расходов", width / 2, 170);
+    return;
+  }
 
   const centerX = width / 2;
   const centerY = 140;
@@ -2206,8 +2262,11 @@ function roundRect(ctx, x, y, width, height, radius) {
 ========================= */
 
 function renderAll() {
+  addSavingsCategoriesToSelect();
+  ensureTotalBalanceCardExists();
   initMonthFilter();
   renderCurrencyRatesPanel();
+
   updateDashboardKPI();
   renderOperations();
   renderTopExpenses();
@@ -2215,6 +2274,7 @@ function renderAll() {
   updateCustomGoalLive();
   updateForecast();
   renderExpenseCalendarLive();
+
   drawIncomeChart();
   drawExpenseChart();
   drawCashFlowChart();
@@ -2228,980 +2288,6 @@ window.addEventListener("resize", function() {
   drawIncomeChart();
   drawExpenseChart();
   drawCashFlowChart();
-});
-
-/* ===============================
-   REMOVE DEMO VALUES / ZERO MODE
-================================ */
-
-function getZeroLabelsForCurrentPeriod() {
-  if (typeof getPeriodMode !== "function") {
-    return ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
-  }
-
-  const mode = getPeriodMode();
-
-  if (mode === "day") {
-    const day = localStorage.getItem("financePeriodDay") || getTodayISO();
-    return [day];
-  }
-
-  if (mode === "month") {
-    const month = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
-    const parts = month.split("-");
-    const year = Number(parts[0]);
-    const monthIndex = Number(parts[1]) - 1;
-    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-
-    const labels = [];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      labels.push(String(day));
-    }
-
-    return labels;
-  }
-
-  if (mode === "year") {
-    return [
-      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
-    ];
-  }
-
-  return ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
-}
-
-buildMonthlyData = function() {
-  const mode = typeof getPeriodMode === "function" ? getPeriodMode() : "month";
-  const convertedAll = operations.map(function(op) {
-    return convertToPLN(op);
-  });
-
-  if (mode === "day") {
-    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
-
-    const income = convertedAll
-      .filter(function(op) {
-        return op.type === "Доход" && op.date === selectedDay;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-
-    const expense = convertedAll
-      .filter(function(op) {
-        return op.type === "Расход" && op.date === selectedDay;
-      })
-      .reduce(function(sum, op) {
-        return sum + Number(op.amount);
-      }, 0);
-
-    return {
-      labels: [selectedDay],
-      income: [income],
-      expense: [expense]
-    };
-  }
-
-  if (mode === "month") {
-    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
-    const parts = selectedMonth.split("-");
-    const year = Number(parts[0]);
-    const monthIndex = Number(parts[1]) - 1;
-    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-
-    const labels = [];
-    const income = [];
-    const expense = [];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = selectedMonth + "-" + String(day).padStart(2, "0");
-
-      labels.push(String(day));
-
-      income.push(
-        convertedAll
-          .filter(function(op) {
-            return op.type === "Доход" && op.date === dateKey;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-
-      expense.push(
-        convertedAll
-          .filter(function(op) {
-            return op.type === "Расход" && op.date === dateKey;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-    }
-
-    return {
-      labels: labels,
-      income: income,
-      expense: expense
-    };
-  }
-
-  if (mode === "year") {
-    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
-
-    const labels = [
-      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
-    ];
-
-    const income = [];
-    const expense = [];
-
-    for (let i = 1; i <= 12; i++) {
-      const key = selectedYear + "-" + String(i).padStart(2, "0");
-
-      income.push(
-        convertedAll
-          .filter(function(op) {
-            return op.type === "Доход" && op.date && op.date.slice(0, 7) === key;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-
-      expense.push(
-        convertedAll
-          .filter(function(op) {
-            return op.type === "Расход" && op.date && op.date.slice(0, 7) === key;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-    }
-
-    return {
-      labels: labels,
-      income: income,
-      expense: expense
-    };
-  }
-
-  if (mode === "custom") {
-    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
-    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
-
-    if (diffDays >= 0 && diffDays <= 31) {
-      const labels = [];
-      const income = [];
-      const expense = [];
-
-      for (let i = 0; i <= diffDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-
-        const key =
-          date.getFullYear() +
-          "-" +
-          String(date.getMonth() + 1).padStart(2, "0") +
-          "-" +
-          String(date.getDate()).padStart(2, "0");
-
-        labels.push(String(date.getDate()));
-
-        income.push(
-          convertedAll
-            .filter(function(op) {
-              return op.type === "Доход" && op.date === key;
-            })
-            .reduce(function(sum, op) {
-              return sum + Number(op.amount);
-            }, 0)
-        );
-
-        expense.push(
-          convertedAll
-            .filter(function(op) {
-              return op.type === "Расход" && op.date === key;
-            })
-            .reduce(function(sum, op) {
-              return sum + Number(op.amount);
-            }, 0)
-        );
-      }
-
-      return {
-        labels: labels,
-        income: income,
-        expense: expense
-      };
-    }
-  }
-
-  const labels = getZeroLabelsForCurrentPeriod();
-
-  return {
-    labels: labels,
-    income: labels.map(function() {
-      return 0;
-    }),
-    expense: labels.map(function() {
-      return 0;
-    })
-  };
-};
-
-buildExpenseCategories = function() {
-  const result = {};
-
-  getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .forEach(function(op) {
-      if (!result[op.category]) {
-        result[op.category] = 0;
-      }
-
-      result[op.category] += Number(op.amount);
-    });
-
-  const data = Object.keys(result)
-    .map(function(category) {
-      return {
-        label: category,
-        value: result[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    })
-    .slice(0, 6);
-
-  const colors = [
-    "#3b82f6",
-    "#22c55e",
-    "#f59e0b",
-    "#a855f7",
-    "#06b6d4",
-    "#ef4444"
-  ];
-
-  return data.map(function(item, index) {
-    return {
-      label: item.label,
-      value: item.value,
-      color: colors[index % colors.length]
-    };
-  });
-};
-
-updateDashboardKPI = function() {
-  const totalIncome = getTotalIncome();
-  const totalExpense = getTotalExpense();
-  const balance = totalIncome - totalExpense;
-
-  let savingsRate = 0;
-
-  if (totalIncome > 0) {
-    savingsRate = Math.round((balance / totalIncome) * 100);
-  }
-
-  const goalAmount = getGoalAmount();
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const incomeEl = document.getElementById("kpiIncome");
-  const expenseEl = document.getElementById("kpiExpense");
-  const balanceEl = document.getElementById("kpiBalance");
-  const savingsEl = document.getElementById("kpiSavings");
-  const goalEl = document.getElementById("kpiGoal");
-
-  if (incomeEl) incomeEl.textContent = money(totalIncome);
-  if (expenseEl) expenseEl.textContent = money(totalExpense);
-  if (balanceEl) balanceEl.textContent = money(balance);
-  if (savingsEl) savingsEl.textContent = savingsRate + "%";
-  if (goalEl) goalEl.textContent = goalPercent + "%";
-
-  if (goalEl) {
-    const card = goalEl.closest(".card");
-
-    if (card) {
-      const note = card.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = money(balance) + " / " + money(goalAmount);
-      }
-    }
-  }
-};
-
-renderIncomeSourcesLive = function() {
-  const incomeByCategory = {};
-
-  getConvertedPeriodOperations()
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .forEach(function(op) {
-      if (!incomeByCategory[op.category]) {
-        incomeByCategory[op.category] = 0;
-      }
-
-      incomeByCategory[op.category] += Number(op.amount);
-    });
-
-  const incomeData = Object.keys(incomeByCategory)
-    .map(function(category) {
-      return {
-        label: category,
-        value: incomeByCategory[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    });
-
-  const panels = document.querySelectorAll(".panel");
-
-  panels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Доходы по источникам")) {
-      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
-
-      if (incomeData.length === 0) {
-        const row = document.createElement("div");
-        row.className = "list-row";
-        row.innerHTML = `
-          <span>Нет доходов</span>
-          <span>0 PLN</span>
-        `;
-        panel.appendChild(row);
-        return;
-      }
-
-      incomeData.forEach(function(item) {
-        const row = document.createElement("div");
-        row.className = "list-row";
-
-        row.innerHTML = `
-          <span>${item.label}</span>
-          <span>${money(item.value)} PLN</span>
-        `;
-
-        panel.appendChild(row);
-      });
-    }
-  });
-};
-
-drawExpenseChart = function() {
-  const chart = prepareCanvas("expenseChart", 320);
-  if (!chart) return;
-
-  const ctx = chart.ctx;
-  const width = chart.width;
-  const height = chart.height;
-
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, width, height);
-
-  const data = buildExpenseCategories();
-
-  const total = data.reduce(function(sum, item) {
-    return sum + item.value;
-  }, 0);
-
-  if (total <= 0) {
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "bold 22px Segoe UI";
-    ctx.textAlign = "center";
-    ctx.fillText("0 PLN", width / 2, 145);
-
-    ctx.font = "13px Segoe UI";
-    ctx.fillText("Нет расходов", width / 2, 170);
-    return;
-  }
-
-  const centerX = width / 2;
-  const centerY = 140;
-  const radius = 95;
-  const innerRadius = 55;
-
-  let startAngle = -Math.PI / 2;
-
-  data.forEach(function(item) {
-    const slice = (item.value / total) * Math.PI * 2;
-    const endAngle = startAngle + slice;
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-    ctx.closePath();
-
-    ctx.fillStyle = item.color;
-    ctx.fill();
-
-    startAngle = endAngle;
-  });
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 26px Segoe UI";
-  ctx.textAlign = "center";
-  ctx.fillText(money(total), centerX, centerY - 4);
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "13px Segoe UI";
-  ctx.fillText("PLN расходы", centerX, centerY + 20);
-
-  ctx.textAlign = "left";
-  ctx.font = "13px Segoe UI";
-
-  const legendY = 255;
-
-  data.slice(0, 4).forEach(function(item, index) {
-    const x = 30 + (index % 2) * 150;
-    const y = legendY + Math.floor(index / 2) * 28;
-
-    ctx.fillStyle = item.color;
-    ctx.fillRect(x, y, 12, 12);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(item.label, x + 20, y + 11);
-  });
-};
-
-function resetAllSavedData() {
-  if (!confirm("Удалить все сохранённые операции?")) return;
-
-  operations = [];
-  localStorage.removeItem("financeOperations");
-
-  renderAll();
-}
-
-renderAll();
-
- ===============================
-   SAVINGS / TOTAL BALANCE LOGIC
-================================ */
-
-function isSavingsCategoryName(category) {
-  if (!category) return false;
-
-  const name = String(category).toLowerCase().trim();
-
-  return (
-    name === "накопления" ||
-    name === "сбережения" ||
-    name === "отложить" ||
-    name === "отложено" ||
-    name === "saving" ||
-    name === "savings"
-  );
-}
-
-function isSavingsOperation(op) {
-  return isSavingsCategoryName(op.category);
-}
-
-function addSavingsCategoriesToSelect() {
-  const select = document.getElementById("opCategory");
-  if (!select) return;
-
-  const existing = Array.from(select.options).map(function(option) {
-    return option.value;
-  });
-
-  const categoriesToAdd = [
-    "Накопления",
-    "Сбережения",
-    "Отложить"
-  ];
-
-  categoriesToAdd.forEach(function(category) {
-    if (!existing.includes(category)) {
-      const option = document.createElement("option");
-      option.value = category;
-      option.textContent = category;
-      select.appendChild(option);
-    }
-  });
-}
-
-function getAllConvertedOperationsForSavingsLogic() {
-  if (typeof getFilteredOperationsRaw === "function") {
-    return getFilteredOperationsRaw().map(function(op) {
-      return typeof convertToPLN === "function" ? convertToPLN(op) : op;
-    });
-  }
-
-  return operations.map(function(op) {
-    return typeof convertToPLN === "function" ? convertToPLN(op) : op;
-  });
-}
-
-function getIncomeOperationsForSavingsLogic() {
-  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
-    return op.type === "Доход" && !isSavingsOperation(op);
-  });
-}
-
-function getExpenseOperationsForSavingsLogic() {
-  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
-    return op.type === "Расход" && !isSavingsOperation(op);
-  });
-}
-
-function getSavingsOperationsForSavingsLogic() {
-  return getAllConvertedOperationsForSavingsLogic().filter(function(op) {
-    return isSavingsOperation(op);
-  });
-}
-
-function getTotalIncome() {
-  return getIncomeOperationsForSavingsLogic().reduce(function(sum, op) {
-    return sum + Number(op.amount);
-  }, 0);
-}
-
-function getTotalExpense() {
-  return getExpenseOperationsForSavingsLogic().reduce(function(sum, op) {
-    return sum + Number(op.amount);
-  }, 0);
-}
-
-function getTotalSavings() {
-  return getSavingsOperationsForSavingsLogic().reduce(function(sum, op) {
-    return sum + Number(op.amount);
-  }, 0);
-}
-
-function getBalance() {
-  return getTotalIncome() - getTotalExpense() - getTotalSavings();
-}
-
-function getTotalBalance() {
-  return getBalance() + getTotalSavings();
-}
-
-function ensureTotalBalanceCardExists() {
-  const grid = document.querySelector(".kpi-grid");
-  if (!grid) return;
-
-  if (document.getElementById("kpiTotalBalance")) return;
-
-  const card = document.createElement("div");
-  card.className = "card";
-
-  card.innerHTML = `
-    <div class="card-label">Общий баланс</div>
-    <div id="kpiTotalBalance" class="card-value blue">0</div>
-    <div class="card-note">Баланс + накопления</div>
-  `;
-
-  grid.appendChild(card);
-
-  if (grid.style) {
-    grid.style.gridTemplateColumns = "repeat(6, 1fr)";
-  }
-}
-
-function updateDashboardKPI() {
-  const totalIncome = getTotalIncome();
-  const totalExpense = getTotalExpense();
-  const totalSavings = getTotalSavings();
-  const balance = getBalance();
-  const totalBalance = getTotalBalance();
-
-  let savingsRate = 0;
-
-  if (totalIncome > 0) {
-    savingsRate = Math.round((totalSavings / totalIncome) * 100);
-  }
-
-  const goalAmount =
-    typeof getGoalAmount === "function"
-      ? getGoalAmount()
-      : Number(localStorage.getItem("financeGoalAmount")) || 100000;
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
-  );
-
-  const incomeEl = document.getElementById("kpiIncome");
-  const expenseEl = document.getElementById("kpiExpense");
-  const balanceEl = document.getElementById("kpiBalance");
-  const savingsEl = document.getElementById("kpiSavings");
-  const goalEl = document.getElementById("kpiGoal");
-  const totalBalanceEl = document.getElementById("kpiTotalBalance");
-
-  if (incomeEl) incomeEl.textContent = money(totalIncome);
-  if (expenseEl) expenseEl.textContent = money(totalExpense);
-  if (balanceEl) balanceEl.textContent = money(balance);
-  if (savingsEl) savingsEl.textContent = money(totalSavings);
-  if (goalEl) goalEl.textContent = goalPercent + "%";
-  if (totalBalanceEl) totalBalanceEl.textContent = money(totalBalance);
-
-  if (savingsEl) {
-    const savingsCard = savingsEl.closest(".card");
-
-    if (savingsCard) {
-      const note = savingsCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = savingsRate + "% от дохода";
-      }
-    }
-  }
-
-  if (goalEl) {
-    const goalCard = goalEl.closest(".card");
-
-    if (goalCard) {
-      const note = goalCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = money(totalSavings) + " / " + money(goalAmount);
-      }
-    }
-  }
-}
-
-function updateCustomGoalLive() {
-  const goalAmount =
-    typeof getGoalAmount === "function"
-      ? getGoalAmount()
-      : Number(localStorage.getItem("financeGoalAmount")) || 100000;
-
-  const totalSavings = getTotalSavings();
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
-  );
-
-  const remaining = Math.max(0, goalAmount - totalSavings);
-
-  const kpiGoal = document.getElementById("kpiGoal");
-
-  if (kpiGoal) {
-    kpiGoal.textContent = goalPercent + "%";
-  }
-
-  const panels = document.querySelectorAll(".panel");
-
-  panels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Финансовая цель")) {
-      panel.innerHTML = `
-        <div class="panel-title">🎯 Финансовая цель</div>
-
-        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
-          <input
-            id="goalAmountInputLive"
-            type="number"
-            value="${goalAmount}"
-            placeholder="Введите цель"
-            style="
-              width:100%;
-              padding:13px 14px;
-              border-radius:12px;
-              border:1px solid rgba(255,255,255,0.08);
-              background:#0f172a;
-              color:white;
-              outline:none;
-              font-weight:700;
-            "
-          >
-
-          <button
-            onclick="saveGoalAmountLive()"
-            style="
-              padding:13px 18px;
-              border:none;
-              border-radius:12px;
-              background:#3b82f6;
-              color:white;
-              font-weight:900;
-              cursor:pointer;
-            "
-          >
-            Сохранить
-          </button>
-        </div>
-
-        <div class="big-number">
-          ${money(goalAmount)} PLN
-        </div>
-
-        <div class="progress">
-          <div class="progress-fill" style="width:${goalPercent}%"></div>
-        </div>
-
-        <div style="margin-top:16px;">
-          Накоплено: ${money(totalSavings)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${money(remaining)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Прогресс: ${goalPercent}%
-        </div>
-      `;
-    }
-  });
-}
-
-function buildExpenseCategories() {
-  const result = {};
-
-  getExpenseOperationsForSavingsLogic().forEach(function(op) {
-    if (!result[op.category]) {
-      result[op.category] = 0;
-    }
-
-    result[op.category] += Number(op.amount);
-  });
-
-  const data = Object.keys(result)
-    .map(function(category) {
-      return {
-        label: category,
-        value: result[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    })
-    .slice(0, 6);
-
-  const colors = [
-    "#3b82f6",
-    "#22c55e",
-    "#f59e0b",
-    "#a855f7",
-    "#06b6d4",
-    "#ef4444"
-  ];
-
-  return data.map(function(item, index) {
-    return {
-      label: item.label,
-      value: item.value,
-      color: colors[index % colors.length]
-    };
-  });
-}
-
-function renderIncomeSourcesLive() {
-  const incomeByCategory = {};
-
-  getIncomeOperationsForSavingsLogic().forEach(function(op) {
-    if (!incomeByCategory[op.category]) {
-      incomeByCategory[op.category] = 0;
-    }
-
-    incomeByCategory[op.category] += Number(op.amount);
-  });
-
-  const incomeData = Object.keys(incomeByCategory)
-    .map(function(category) {
-      return {
-        label: category,
-        value: incomeByCategory[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    });
-
-  const panels = document.querySelectorAll(".panel");
-
-  panels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Доходы по источникам")) {
-      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
-
-      if (incomeData.length === 0) {
-        const row = document.createElement("div");
-        row.className = "list-row";
-
-        row.innerHTML = `
-          <span>Нет доходов</span>
-          <span>0 PLN</span>
-        `;
-
-        panel.appendChild(row);
-        return;
-      }
-
-      incomeData.forEach(function(item) {
-        const row = document.createElement("div");
-        row.className = "list-row";
-
-        row.innerHTML = `
-          <span>${item.label}</span>
-          <span>${money(item.value)} PLN</span>
-        `;
-
-        panel.appendChild(row);
-      });
-    }
-  });
-}
-
-function buildMonthlyData() {
-  const mode = typeof getPeriodMode === "function" ? getPeriodMode() : "month";
-  const convertedAll = operations.map(function(op) {
-    return convertToPLN(op);
-  });
-
-  function isIncomeForChart(op) {
-    return op.type === "Доход" && !isSavingsOperation(op);
-  }
-
-  function isExpenseForChart(op) {
-    return op.type === "Расход" && !isSavingsOperation(op);
-  }
-
-  if (mode === "month") {
-    const selectedMonth =
-      localStorage.getItem("financePeriodMonth") ||
-      (typeof getCurrentMonthISO === "function" ? getCurrentMonthISO() : new Date().toISOString().slice(0, 7));
-
-    const parts = selectedMonth.split("-");
-    const year = Number(parts[0]);
-    const monthIndex = Number(parts[1]) - 1;
-    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-
-    const labels = [];
-    const income = [];
-    const expense = [];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = selectedMonth + "-" + String(day).padStart(2, "0");
-
-      labels.push(String(day));
-
-      income.push(
-        convertedAll
-          .filter(function(op) {
-            return isIncomeForChart(op) && op.date === dateKey;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-
-      expense.push(
-        convertedAll
-          .filter(function(op) {
-            return isExpenseForChart(op) && op.date === dateKey;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-    }
-
-    return {
-      labels: labels,
-      income: income,
-      expense: expense
-    };
-  }
-
-  if (mode === "year") {
-    const selectedYear =
-      localStorage.getItem("financePeriodYear") ||
-      String(new Date().getFullYear());
-
-    const labels = [
-      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
-      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
-    ];
-
-    const income = [];
-    const expense = [];
-
-    for (let i = 1; i <= 12; i++) {
-      const key = selectedYear + "-" + String(i).padStart(2, "0");
-
-      income.push(
-        convertedAll
-          .filter(function(op) {
-            return isIncomeForChart(op) && op.date && op.date.slice(0, 7) === key;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-
-      expense.push(
-        convertedAll
-          .filter(function(op) {
-            return isExpenseForChart(op) && op.date && op.date.slice(0, 7) === key;
-          })
-          .reduce(function(sum, op) {
-            return sum + Number(op.amount);
-          }, 0)
-      );
-    }
-
-    return {
-      labels: labels,
-      income: income,
-      expense: expense
-    };
-  }
-
-  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
-
-  return {
-    labels: labels,
-    income: labels.map(function() { return 0; }),
-    expense: labels.map(function() { return 0; })
-  };
-}
-
-function renderAllSavingsLogic() {
-  addSavingsCategoriesToSelect();
-  ensureTotalBalanceCardExists();
-
-  if (typeof renderAll === "function") {
-    renderAll();
-  }
-
-  updateDashboardKPI();
-  updateCustomGoalLive();
-
-  if (typeof drawIncomeChart === "function") drawIncomeChart();
-  if (typeof drawExpenseChart === "function") drawExpenseChart();
-  if (typeof drawCashFlowChart === "function") drawCashFlowChart();
-}
-
-window.addEventListener("load", function() {
-  setTimeout(function() {
-    renderAllSavingsLogic();
-  }, 300);
 });
 
 </script>
