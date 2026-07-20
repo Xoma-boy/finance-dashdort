@@ -619,29 +619,10 @@ canvas {
 </div>
 
 <script>
-/* =====================================================
-   FINANCE DASHBOARD PRO - FINAL SCRIPT
-===================================================== */
-
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
-let expenseChartSegments = [];
 let incomeChartPoints = [];
-let cashFlowBars = [];
-let calendarDayData = {};
-
-let journalFilters = {
-  date: "",
-  type: "",
-  category: "",
-  name: "",
-  minAmount: "",
-  maxAmount: ""
-};
-
-/* =========================
-   HELPERS
-========================= */
+let expenseChartSegments = [];
 
 function money(value) {
   return Math.round(Number(value) || 0).toLocaleString("ru-RU");
@@ -653,24 +634,12 @@ function getGoalAmount() {
 
 function getTodayISO() {
   const now = new Date();
-
-  return (
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(now.getDate()).padStart(2, "0")
-  );
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
 }
 
 function getCurrentMonthISO() {
   const now = new Date();
-
-  return (
-    now.getFullYear() +
-    "-" +
-    String(now.getMonth() + 1).padStart(2, "0")
-  );
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
 }
 
 function getCurrentYearISO() {
@@ -691,7 +660,6 @@ function createTooltip() {
 
   const tooltip = document.createElement("div");
   tooltip.id = "dashboardTooltip";
-
   tooltip.style.position = "fixed";
   tooltip.style.zIndex = "99999";
   tooltip.style.pointerEvents = "none";
@@ -703,8 +671,7 @@ function createTooltip() {
   tooltip.style.fontSize = "13px";
   tooltip.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
   tooltip.style.display = "none";
-  tooltip.style.maxWidth = "260px";
-
+  tooltip.style.maxWidth = "280px";
   document.body.appendChild(tooltip);
 }
 
@@ -722,10 +689,6 @@ function hideTooltip() {
   const tooltip = document.getElementById("dashboardTooltip");
   if (tooltip) tooltip.style.display = "none";
 }
-
-/* =========================
-   SAVINGS LOGIC
-========================= */
 
 function isSavingsCategoryName(category) {
   if (!category) return false;
@@ -762,11 +725,11 @@ function addSavingsTypeAndCategory() {
       typeSelect.appendChild(option);
     }
 
-    typeSelect.addEventListener("change", function() {
+    typeSelect.onchange = function() {
       if (typeSelect.value === "Накопления" && categorySelect) {
         categorySelect.value = "Накопления";
       }
-    });
+    };
   }
 
   if (categorySelect) {
@@ -784,17 +747,26 @@ function addSavingsTypeAndCategory() {
     });
   }
 
-  ensureStyle("savingsTypeStyle", `
+  ensureStyle("financeExtraStyles", `
     .badge-savings {
       color: #a855f7;
       font-weight: 900;
     }
+
+    #journalFiltersBox {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    @media(max-width: 1200px) {
+      #journalFiltersBox {
+        grid-template-columns: 1fr;
+      }
+    }
   `);
 }
-
-/* =========================
-   CURRENCY RATES
-========================= */
 
 function getRates() {
   return {
@@ -873,6 +845,7 @@ function renderCurrencyRatesPanel() {
 
     <div class="history-box">
       <div class="panel-title">ℹ️ Пересчёт валют</div>
+
       <div style="color:#94a3b8;line-height:1.7;">
         EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
         <br><br>
@@ -994,10 +967,6 @@ async function fetchLiveRatesFromAPI() {
   }
 }
 
-/* =========================
-   PERIOD FILTER
-========================= */
-
 function getPeriodMode() {
   return localStorage.getItem("financePeriodMode") || "month";
 }
@@ -1019,15 +988,7 @@ function initPeriodFilter() {
   box.style.alignItems = "center";
 
   box.innerHTML = `
-    <select id="periodMode" style="
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-      cursor:pointer;
-    ">
+    <select id="periodMode" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;cursor:pointer;">
       <option value="all">Все данные</option>
       <option value="day">День</option>
       <option value="month">Месяц</option>
@@ -1035,84 +996,25 @@ function initPeriodFilter() {
       <option value="custom">Свой период</option>
     </select>
 
-    <input id="periodDay" type="date" style="
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-    ">
+    <input id="periodDay" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodMonth" type="month" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodYear" type="number" placeholder="Год" style="width:110px;border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodStart" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodEnd" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
 
-    <input id="periodMonth" type="month" style="
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-    ">
-
-    <input id="periodYear" type="number" placeholder="Год" style="
-      width:110px;
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-    ">
-
-    <input id="periodStart" type="date" style="
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-    ">
-
-    <input id="periodEnd" type="date" style="
-      border:none;
-      border-radius:12px;
-      background:#1e293b;
-      color:white;
-      padding:13px 18px;
-      font-weight:800;
-    ">
-
-    <button onclick="applyPeriodFilter()" style="
-      border:none;
-      border-radius:12px;
-      background:#22c55e;
-      color:white;
-      padding:13px 18px;
-      font-weight:900;
-      cursor:pointer;
-    ">
+    <button onclick="applyPeriodFilter()" style="border:none;border-radius:12px;background:#22c55e;color:white;padding:13px 18px;font-weight:900;cursor:pointer;">
       Применить
     </button>
   `;
 
   actions.prepend(box);
 
-  document.getElementById("periodMode").value =
-    localStorage.getItem("financePeriodMode") || "month";
-
-  document.getElementById("periodDay").value =
-    localStorage.getItem("financePeriodDay") || getTodayISO();
-
-  document.getElementById("periodMonth").value =
-    localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
-
-  document.getElementById("periodYear").value =
-    localStorage.getItem("financePeriodYear") || getCurrentYearISO();
-
-  document.getElementById("periodStart").value =
-    localStorage.getItem("financePeriodStart") || getTodayISO();
-
-  document.getElementById("periodEnd").value =
-    localStorage.getItem("financePeriodEnd") || getTodayISO();
+  document.getElementById("periodMode").value = localStorage.getItem("financePeriodMode") || "month";
+  document.getElementById("periodDay").value = localStorage.getItem("financePeriodDay") || getTodayISO();
+  document.getElementById("periodMonth").value = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+  document.getElementById("periodYear").value = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+  document.getElementById("periodStart").value = localStorage.getItem("financePeriodStart") || getTodayISO();
+  document.getElementById("periodEnd").value = localStorage.getItem("financePeriodEnd") || getTodayISO();
 
   document.getElementById("periodMode").addEventListener("change", function() {
     localStorage.setItem("financePeriodMode", this.value);
@@ -1124,7 +1026,6 @@ function initPeriodFilter() {
 
 function renderPeriodInputs() {
   const mode = getPeriodMode();
-
   const day = document.getElementById("periodDay");
   const month = document.getElementById("periodMonth");
   const year = document.getElementById("periodYear");
@@ -1142,7 +1043,6 @@ function renderPeriodInputs() {
 
 function applyPeriodFilter() {
   const mode = document.getElementById("periodMode").value;
-
   localStorage.setItem("financePeriodMode", mode);
 
   const day = document.getElementById("periodDay").value;
@@ -1163,13 +1063,10 @@ function applyPeriodFilter() {
 function getFilteredOperationsRaw() {
   const mode = getPeriodMode();
 
-  if (mode === "all") {
-    return operations;
-  }
+  if (mode === "all") return operations;
 
   if (mode === "day") {
     const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
-
     return operations.filter(function(op) {
       return op.date === selectedDay;
     });
@@ -1177,7 +1074,6 @@ function getFilteredOperationsRaw() {
 
   if (mode === "month") {
     const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
-
     return operations.filter(function(op) {
       return op.date && op.date.slice(0, 7) === selectedMonth;
     });
@@ -1185,7 +1081,6 @@ function getFilteredOperationsRaw() {
 
   if (mode === "year") {
     const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
-
     return operations.filter(function(op) {
       return op.date && op.date.slice(0, 4) === selectedYear;
     });
@@ -1209,19 +1104,15 @@ function getConvertedPeriodOperations() {
   });
 }
 
-/* =========================
-   TOTALS
-========================= */
-
 function getIncomeOperations() {
   return getConvertedPeriodOperations().filter(function(op) {
-    return op.type === "Доход" && !isSavingsOperation(op);
+    return op.type === "Доход";
   });
 }
 
 function getExpenseOperations() {
   return getConvertedPeriodOperations().filter(function(op) {
-    return op.type === "Расход" && !isSavingsOperation(op);
+    return op.type === "Расход";
   });
 }
 
@@ -1250,30 +1141,20 @@ function getTotalSavings() {
 }
 
 function getBalance() {
-  return getTotalIncome() - getTotalExpense() - getTotalSavings();
+  return getTotalIncome() - getTotalExpense();
 }
 
 function getTotalBalance() {
   return getBalance() + getTotalSavings();
 }
 
-function hasRealOperations() {
-  return getConvertedPeriodOperations().length > 0;
-}
-
-/* =========================
-   KPI
-========================= */
-
 function ensureTotalBalanceCardExists() {
   const grid = document.querySelector(".kpi-grid");
   if (!grid) return;
-
   if (document.getElementById("kpiTotalBalance")) return;
 
   const card = document.createElement("div");
   card.className = "card";
-
   card.innerHTML = `
     <div class="card-label">Общий баланс</div>
     <div id="kpiTotalBalance" class="card-value blue">0</div>
@@ -1299,10 +1180,7 @@ function updateDashboardKPI() {
 
   const goalAmount = getGoalAmount();
 
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
-  );
+  const goalPercent = Math.max(0, Math.min(100, Math.round((totalSavings / goalAmount) * 100)));
 
   const incomeEl = document.getElementById("kpiIncome");
   const expenseEl = document.getElementById("kpiExpense");
@@ -1318,34 +1196,30 @@ function updateDashboardKPI() {
   if (goalEl) goalEl.textContent = goalPercent + "%";
   if (totalBalanceEl) totalBalanceEl.textContent = money(totalBalance);
 
+  if (balanceEl) {
+    const card = balanceEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = "Доход - расходы";
+    }
+  }
+
   if (savingsEl) {
-    const savingsCard = savingsEl.closest(".card");
-
-    if (savingsCard) {
-      const note = savingsCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = savingsRate + "% от дохода";
-      }
+    const card = savingsEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = savingsRate + "% от дохода";
     }
   }
 
   if (goalEl) {
-    const goalCard = goalEl.closest(".card");
-
-    if (goalCard) {
-      const note = goalCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = money(totalSavings) + " / " + money(goalAmount);
-      }
+    const card = goalEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = money(totalSavings) + " / " + money(goalAmount);
     }
   }
 }
-
-/* =========================
-   OPERATIONS
-========================= */
 
 function addOperation() {
   const name = document.getElementById("opName").value.trim();
@@ -1397,7 +1271,6 @@ function deleteOperation(id) {
 
 function clearOperations() {
   if (!confirm("Удалить все операции?")) return;
-
   operations = [];
   localStorage.removeItem("financeOperations");
   renderAll();
@@ -1417,8 +1290,8 @@ function exportOperations() {
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-
   const link = document.createElement("a");
+
   link.href = url;
   link.download = "finance-operations.csv";
   link.click();
@@ -1426,23 +1299,13 @@ function exportOperations() {
   URL.revokeObjectURL(url);
 }
 
-/* =========================
-   JOURNAL FILTERS
-========================= */
-
 function initJournalFilters() {
   const historyBox = document.querySelector(".history-box");
   if (!historyBox) return;
-
   if (document.getElementById("journalFiltersBox")) return;
 
   const filters = document.createElement("div");
   filters.id = "journalFiltersBox";
-
-  filters.style.display = "grid";
-  filters.style.gridTemplateColumns = "repeat(6, 1fr)";
-  filters.style.gap = "10px";
-  filters.style.margin = "12px 0";
 
   filters.innerHTML = `
     <input id="journalDateFilter" type="date" class="form-input" title="Фильтр по дате">
@@ -1455,11 +1318,8 @@ function initJournalFilters() {
     </select>
 
     <input id="journalCategoryFilter" class="form-input" placeholder="Категория">
-
     <input id="journalNameFilter" class="form-input" placeholder="Название">
-
     <input id="journalMinFilter" type="number" class="form-input" placeholder="Мин. сумма">
-
     <input id="journalMaxFilter" type="number" class="form-input" placeholder="Макс. сумма">
   `;
 
@@ -1482,13 +1342,8 @@ function initJournalFilters() {
     const el = document.getElementById(id);
 
     if (el) {
-      el.addEventListener("input", function() {
-        renderOperations();
-      });
-
-      el.addEventListener("change", function() {
-        renderOperations();
-      });
+      el.addEventListener("input", renderOperations);
+      el.addEventListener("change", renderOperations);
     }
   });
 }
@@ -1547,11 +1402,7 @@ function renderOperations() {
       sign = "+";
     }
 
-    let amountText =
-      sign +
-      Number(op.amount).toLocaleString("ru-RU") +
-      " " +
-      op.currency;
+    let amountText = sign + Number(op.amount).toLocaleString("ru-RU") + " " + op.currency;
 
     if (op.currency !== "PLN") {
       amountText += `<br><span style="color:#94a3b8;font-size:12px;">≈ ${money(converted.amount)} PLN</span>`;
@@ -1582,32 +1433,13 @@ function renderOperations() {
   }).join("");
 }
 
-/* =========================
-   LISTS
-========================= */
-
 function buildExpenseCategories() {
   const result = {};
 
   getExpenseOperations().forEach(function(op) {
-    if (!result[op.category]) {
-      result[op.category] = 0;
-    }
-
+    if (!result[op.category]) result[op.category] = 0;
     result[op.category] += Number(op.amount);
   });
-
-  const data = Object.keys(result)
-    .map(function(category) {
-      return {
-        label: category,
-        value: result[category]
-      };
-    })
-    .sort(function(a, b) {
-      return b.value - a.value;
-    })
-    .slice(0, 8);
 
   const colors = [
     "#3b82f6",
@@ -1620,13 +1452,24 @@ function buildExpenseCategories() {
     "#f97316"
   ];
 
-  return data.map(function(item, index) {
-    return {
-      label: item.label,
-      value: item.value,
-      color: colors[index % colors.length]
-    };
-  });
+  return Object.keys(result)
+    .map(function(category) {
+      return {
+        label: category,
+        value: result[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    })
+    .slice(0, 8)
+    .map(function(item, index) {
+      return {
+        label: item.label,
+        value: item.value,
+        color: colors[index % colors.length]
+      };
+    });
 }
 
 function renderTopExpenses() {
@@ -1672,10 +1515,7 @@ function renderIncomeSourcesLive() {
   const incomeByCategory = {};
 
   getIncomeOperations().forEach(function(op) {
-    if (!incomeByCategory[op.category]) {
-      incomeByCategory[op.category] = 0;
-    }
-
+    if (!incomeByCategory[op.category]) incomeByCategory[op.category] = 0;
     incomeByCategory[op.category] += Number(op.amount);
   });
 
@@ -1721,23 +1561,18 @@ function renderIncomeSourcesLive() {
   });
 }
 
-/* =========================
-   GOAL / FORECAST
-========================= */
-
 function updateCustomGoalLive() {
   const goalAmount = getGoalAmount();
   const totalSavings = getTotalSavings();
 
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((totalSavings / goalAmount) * 100))
-  );
-
+  const goalPercent = Math.max(0, Math.min(100, Math.round((totalSavings / goalAmount) * 100)));
   const remaining = Math.max(0, goalAmount - totalSavings);
 
   const kpiGoal = document.getElementById("kpiGoal");
-  if (kpiGoal) kpiGoal.textContent = goalPercent + "%";
+
+  if (kpiGoal) {
+    kpiGoal.textContent = goalPercent + "%";
+  }
 
   const panels = document.querySelectorAll(".panel");
 
@@ -1782,25 +1617,15 @@ function updateCustomGoalLive() {
           </button>
         </div>
 
-        <div class="big-number">
-          ${money(goalAmount)} PLN
-        </div>
+        <div class="big-number">${money(goalAmount)} PLN</div>
 
         <div class="progress">
           <div class="progress-fill" style="width:${goalPercent}%"></div>
         </div>
 
-        <div style="margin-top:16px;">
-          Накоплено: ${money(totalSavings)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${money(remaining)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Прогресс: ${goalPercent}%
-        </div>
+        <div style="margin-top:16px;">Накоплено: ${money(totalSavings)} PLN</div>
+        <div style="margin-top:8px;color:#94a3b8;">Осталось: ${money(remaining)} PLN</div>
+        <div style="margin-top:8px;color:#94a3b8;">Прогресс: ${goalPercent}%</div>
       `;
     }
   });
@@ -1842,7 +1667,6 @@ function updateForecast() {
   }
 
   const forecast = totalBalance + average;
-
   const cards = document.querySelectorAll(".mini-card");
 
   cards.forEach(function(card) {
@@ -1851,11 +1675,7 @@ function updateForecast() {
     if (title && title.textContent.includes("Прогноз баланса")) {
       card.innerHTML = `
         <div class="panel-title">🔮 Прогноз баланса</div>
-
-        <div class="forecast-number">
-          ${money(forecast)} PLN
-        </div>
-
+        <div class="forecast-number">${money(forecast)} PLN</div>
         <div class="forecast-text">
           Если текущий темп сохранится, через 1 месяц общий баланс может быть примерно:
           <br><br>
@@ -1868,10 +1688,6 @@ function updateForecast() {
     }
   });
 }
-
-/* =========================
-   CALENDAR
-========================= */
 
 function getSelectedMonthKey() {
   const mode = getPeriodMode();
@@ -1911,7 +1727,7 @@ function getDayBreakdown(dateKey) {
 
   const income = dayOps
     .filter(function(op) {
-      return op.type === "Доход" && !isSavingsOperation(op);
+      return op.type === "Доход";
     })
     .reduce(function(sum, op) {
       return sum + Number(op.amount);
@@ -1919,7 +1735,7 @@ function getDayBreakdown(dateKey) {
 
   const expense = dayOps
     .filter(function(op) {
-      return op.type === "Расход" && !isSavingsOperation(op);
+      return op.type === "Расход";
     })
     .reduce(function(sum, op) {
       return sum + Number(op.amount);
@@ -2013,22 +1829,19 @@ function renderExpenseCalendarLive() {
   });
 }
 
-/* =========================
-   CHART DATA
-========================= */
-
 function buildMonthlyData() {
   const mode = getPeriodMode();
+
   const convertedAll = operations.map(function(op) {
     return convertToPLN(op);
   });
 
   function isIncomeChart(op) {
-    return op.type === "Доход" && !isSavingsOperation(op);
+    return op.type === "Доход";
   }
 
   function isExpenseChart(op) {
-    return op.type === "Расход" && !isSavingsOperation(op);
+    return op.type === "Расход";
   }
 
   if (mode === "day") {
@@ -2208,10 +2021,6 @@ function buildMonthlyData() {
   };
 }
 
-/* =========================
-   CANVAS CHARTS
-========================= */
-
 function prepareCanvas(id, fixedHeight) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
@@ -2229,7 +2038,12 @@ function prepareCanvas(id, fixedHeight) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, width, height);
 
-  return { canvas, ctx, width, height };
+  return {
+    canvas: canvas,
+    ctx: ctx,
+    width: width,
+    height: height
+  };
 }
 
 function drawIncomeChart() {
@@ -2364,8 +2178,7 @@ function drawIncomeChart() {
 
     if (nearest && nearestDistance < 28) {
       showTooltip(
-        `<b>${nearest.label}</b><br>
-        ${nearest.type}: <span style="color:${nearest.color}">${money(nearest.value)} PLN</span>`,
+        `<b>${nearest.label}</b><br>${nearest.type}: <span style="color:${nearest.color}">${money(nearest.value)} PLN</span>`,
         event.clientX,
         event.clientY
       );
@@ -2490,8 +2303,7 @@ function drawExpenseChart() {
         angle <= segment.endAngle
       ) {
         showTooltip(
-          `<b>${segment.label}</b><br>
-          Расход: <span style="color:${segment.color}">${money(segment.value)} PLN</span>`,
+          `<b>${segment.label}</b><br>Расход: <span style="color:${segment.color}">${money(segment.value)} PLN</span>`,
           event.clientX,
           event.clientY
         );
@@ -2618,6 +2430,7 @@ window.addEventListener("resize", function() {
   drawExpenseChart();
   drawCashFlowChart();
 });
+
 </script>
 
 </body>
