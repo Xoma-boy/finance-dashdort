@@ -621,11 +621,12 @@ canvas {
 <script>
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
+const DEMO_INCOME = [3000, 5000, 8000, 12000, 18000, 25383];
+const DEMO_EXPENSE = [1000, 2000, 3000, 5000, 7000, 9337];
+const GOAL_AMOUNT = 100000;
+
 window.addEventListener("load", function () {
-  drawIncomeChart();
-  drawExpenseChart();
-  drawCashFlowChart();
-  renderOperations();
+  renderAll();
 });
 
 window.addEventListener("resize", function () {
@@ -634,261 +635,91 @@ window.addEventListener("resize", function () {
   drawCashFlowChart();
 });
 
-function prepareCanvas(id, fixedHeight) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return null;
-
-  const parent = canvas.parentElement;
-  const width = parent.clientWidth || 800;
-  const height = fixedHeight || parent.clientHeight || 320;
-
-  canvas.width = width;
-  canvas.height = height;
-  canvas.style.width = "100%";
-  canvas.style.height = height + "px";
-  canvas.style.display = "block";
-
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, width, height);
-
-  return { ctx, width, height };
+function formatMoney(value) {
+  return Math.round(value).toLocaleString("ru-RU");
 }
 
-function drawIncomeChart() {
-  const chart = prepareCanvas("incomeChart", 320);
-  if (!chart) return;
-
-  const ctx = chart.ctx;
-  const width = chart.width;
-  const height = chart.height;
-  const padding = 45;
-
-  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
-  const income = [3000, 5000, 8000, 12000, 18000, 25383];
-  const expense = [1000, 2000, 3000, 5000, 7000, 9337];
-  const maxValue = 26000;
-
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 1;
-
-  for (let i = 0; i <= 5; i++) {
-    const y = padding + ((height - padding * 2) / 5) * i;
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
-    ctx.stroke();
-  }
-
-  function getX(index) {
-    return padding + ((width - padding * 2) / (labels.length - 1)) * index;
-  }
-
-  function getY(value) {
-    return height - padding - (value / maxValue) * (height - padding * 2);
-  }
-
-  function drawLine(data, color, fillColor) {
-    ctx.beginPath();
-
-    data.forEach(function (value, index) {
-      const x = getX(index);
-      const y = getY(value);
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.lineTo(getX(data.length - 1), height - padding);
-    ctx.lineTo(getX(0), height - padding);
-    ctx.closePath();
-
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-
-    data.forEach(function (value, index) {
-      const x = getX(index);
-      const y = getY(value);
-
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-    });
-  }
-
-  drawLine(income, "#22c55e", "rgba(34,197,94,0.14)");
-  drawLine(expense, "#ef4444", "rgba(239,68,68,0.14)");
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "13px Segoe UI";
-
-  labels.forEach(function (label, index) {
-    ctx.fillText(label, getX(index) - 12, height - 15);
-  });
-
-  ctx.fillStyle = "#22c55e";
-  ctx.font = "14px Segoe UI";
-  ctx.fillText("Доходы", padding, 24);
-
-  ctx.fillStyle = "#ef4444";
-  ctx.fillText("Расходы", padding + 90, 24);
-}
-
-function drawExpenseChart() {
-  const chart = prepareCanvas("expenseChart", 320);
-  if (!chart) return;
-
-  const ctx = chart.ctx;
-  const width = chart.width;
-  const height = chart.height;
-
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, width, height);
-
-  const data = [
-    { label: "Квартира", value: 3043, color: "#3b82f6" },
-    { label: "Подарки", value: 2050, color: "#22c55e" },
-    { label: "Маме", value: 2000, color: "#f59e0b" },
-    { label: "Бедренка", value: 1270, color: "#a855f7" },
-    { label: "Интернет", value: 50, color: "#06b6d4" },
-    { label: "Зал", value: 50, color: "#ef4444" }
-  ];
-
-  const total = data.reduce(function (sum, item) {
-    return sum + item.value;
-  }, 0);
-
-  const centerX = width / 2;
-  const centerY = 140;
-  const radius = 95;
-  const innerRadius = 55;
-
-  let startAngle = -Math.PI / 2;
-
-  data.forEach(function (item) {
-    const slice = (item.value / total) * Math.PI * 2;
-    const endAngle = startAngle + slice;
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
-    ctx.closePath();
-
-    ctx.fillStyle = item.color;
-    ctx.fill();
-
-    startAngle = endAngle;
-  });
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 26px Segoe UI";
-  ctx.textAlign = "center";
-  ctx.fillText(total.toLocaleString("ru-RU"), centerX, centerY - 4);
-
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "13px Segoe UI";
-  ctx.fillText("PLN расходы", centerX, centerY + 20);
-
-  ctx.textAlign = "left";
-  ctx.font = "13px Segoe UI";
-
-  const legendY = 255;
-
-  data.slice(0, 4).forEach(function (item, index) {
-    const x = 30 + (index % 2) * 150;
-    const y = legendY + Math.floor(index / 2) * 28;
-
-    ctx.fillStyle = item.color;
-    ctx.fillRect(x, y, 12, 12);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(item.label, x + 20, y + 11);
+function getPLNOperations() {
+  return operations.filter(function(op) {
+    return op.currency === "PLN";
   });
 }
 
-function drawCashFlowChart() {
-  const chart = prepareCanvas("cashFlowChart", 300);
-  if (!chart) return;
-
-  const ctx = chart.ctx;
-  const width = chart.width;
-  const height = chart.height;
-  const padding = 45;
-
-  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
-  const inflow = [3000, 5000, 8000, 12000, 18000, 25383];
-  const outflow = [1000, 2000, 3000, 5000, 7000, 9337];
-  const maxValue = 26000;
-
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 1;
-
-  for (let i = 0; i <= 5; i++) {
-    const y = padding + ((height - padding * 2) / 5) * i;
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
-    ctx.stroke();
-  }
-
-  const barWidth = 24;
-  const groupGap = (width - padding * 2) / labels.length;
-
-  labels.forEach(function (label, index) {
-    const baseX = padding + groupGap * index + groupGap / 2;
-
-    const incomeHeight = (inflow[index] / maxValue) * (height - padding * 2);
-    const expenseHeight = (outflow[index] / maxValue) * (height - padding * 2);
-
-    const incomeY = height - padding - incomeHeight;
-    const expenseY = height - padding - expenseHeight;
-
-    ctx.fillStyle = "#22c55e";
-    roundRect(ctx, baseX - barWidth - 3, incomeY, barWidth, incomeHeight, 6);
-    ctx.fill();
-
-    ctx.fillStyle = "#ef4444";
-    roundRect(ctx, baseX + 3, expenseY, barWidth, expenseHeight, 6);
-    ctx.fill();
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "13px Segoe UI";
-    ctx.textAlign = "center";
-    ctx.fillText(label, baseX, height - 14);
-  });
-
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#22c55e";
-  ctx.font = "14px Segoe UI";
-  ctx.fillText("Приток", padding, 22);
-
-  ctx.fillStyle = "#ef4444";
-  ctx.fillText("Отток", padding + 85, 22);
+function getTotalIncome() {
+  return getPLNOperations()
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
 }
 
-function roundRect(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height);
-  ctx.lineTo(x, y + height);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
+function getTotalExpense() {
+  return getPLNOperations()
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+}
+
+function getBalance() {
+  return getTotalIncome() - getTotalExpense();
+}
+
+function hasRealOperations() {
+  return getPLNOperations().length > 0;
+}
+
+function renderAll() {
+  updateDashboardKPI();
+  renderOperations();
+  renderTopExpenses();
+  updateGoalAndForecast();
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+}
+
+function updateDashboardKPI() {
+  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
+  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
+  const balance = totalIncome - totalExpense;
+
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((balance / totalIncome) * 100);
+  }
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / GOAL_AMOUNT) * 100))
+  );
+
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+
+  if (incomeEl) incomeEl.textContent = formatMoney(totalIncome);
+  if (expenseEl) expenseEl.textContent = formatMoney(totalExpense);
+  if (balanceEl) balanceEl.textContent = formatMoney(balance);
+  if (savingsEl) savingsEl.textContent = savingsRate + "%";
+  if (goalEl) goalEl.textContent = goalPercent + "%";
+
+  const goalCard = goalEl ? goalEl.closest(".card") : null;
+
+  if (goalCard) {
+    const note = goalCard.querySelector(".card-note");
+
+    if (note) {
+      note.textContent = formatMoney(balance) + " / " + formatMoney(GOAL_AMOUNT);
+    }
+  }
 }
 
 function addOperation() {
@@ -920,7 +751,7 @@ function addOperation() {
   document.getElementById("opName").value = "";
   document.getElementById("opAmount").value = "";
 
-  renderOperations();
+  renderAll();
 }
 
 function renderOperations() {
@@ -930,13 +761,13 @@ function renderOperations() {
   if (operations.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="color:#94a3b8;">Пока нет добавленных операций</td>
+        <td colspan="6" style="color:#94a3b8;">Пока нет добавленных операций</td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = operations.slice(0, 20).map(function(op) {
+  tbody.innerHTML = operations.slice(0, 30).map(function(op) {
     const typeClass = op.type === "Доход" ? "badge-income" : "badge-expense";
     const sign = op.type === "Доход" ? "+" : "-";
 
@@ -946,7 +777,7 @@ function renderOperations() {
         <td class="${typeClass}">${op.type}</td>
         <td>${op.category}</td>
         <td>${op.name}</td>
-        <td>${sign}${op.amount.toLocaleString("ru-RU")} ${op.currency}</td>
+        <td>${sign}${Number(op.amount).toLocaleString("ru-RU")} ${op.currency}</td>
         <td>
           <button onclick="deleteOperation(${op.id})" style="
             background:#ef4444;
@@ -965,12 +796,21 @@ function renderOperations() {
   }).join("");
 }
 
+function deleteOperation(id) {
+  operations = operations.filter(function(op) {
+    return op.id !== id;
+  });
+
+  localStorage.setItem("financeOperations", JSON.stringify(operations));
+  renderAll();
+}
+
 function clearOperations() {
-  if (!confirm("Удалить все добавленные операции?")) return;
+  if (!confirm("Удалить все операции?")) return;
 
   operations = [];
   localStorage.removeItem("financeOperations");
-  renderOperations();
+  renderAll();
 }
 
 function exportOperations() {
@@ -996,113 +836,6 @@ function exportOperations() {
   URL.revokeObjectURL(url);
 }
 
-function formatMoney(value) {
-  return Math.round(value).toLocaleString("ru-RU");
-}
-
-function updateDashboardKPI() {
-  const plnOperations = operations.filter(function(op) {
-    return op.currency === "PLN";
-  });
-
-  const totalIncome = plnOperations
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  const totalExpense = plnOperations
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  const balance = totalIncome - totalExpense;
-
-  let savingsRate = 0;
-
-  if (totalIncome > 0) {
-    savingsRate = Math.round((balance / totalIncome) * 100);
-  }
-
-  const goalAmount = 100000;
-  let goalPercent = 0;
-
-  if (goalAmount > 0) {
-    goalPercent = Math.max(0, Math.min(100, Math.round((balance / goalAmount) * 100)));
-  }
-
-  const incomeEl = document.getElementById("kpiIncome");
-  const expenseEl = document.getElementById("kpiExpense");
-  const balanceEl = document.getElementById("kpiBalance");
-  const savingsEl = document.getElementById("kpiSavings");
-  const goalEl = document.getElementById("kpiGoal");
-
-  if (incomeEl) {
-    incomeEl.textContent = formatMoney(totalIncome);
-  }
-
-  if (expenseEl) {
-    expenseEl.textContent = formatMoney(totalExpense);
-  }
-
-  if (balanceEl) {
-    balanceEl.textContent = formatMoney(balance);
-  }
-
-  if (savingsEl) {
-    savingsEl.textContent = savingsRate + "%";
-  }
-
-  if (goalEl) {
-    goalEl.textContent = goalPercent + "%";
-  }
-
-  const progressFill = document.querySelector(".progress-fill");
-
-  if (progressFill) {
-    progressFill.style.width = goalPercent + "%";
-  }
-}
-
-const oldAddOperation = addOperation;
-
-addOperation = function() {
-  oldAddOperation();
-  updateDashboardKPI();
-};
-
-const oldClearOperations = clearOperations;
-
-clearOperations = function() {
-  oldClearOperations();
-  updateDashboardKPI();
-};
-
-function deleteOperation(id) {
-  operations = operations.filter(function(op) {
-    return op.id !== id;
-  });
-
-  localStorage.setItem("financeOperations", JSON.stringify(operations));
-
-  renderOperations();
-
-  if (typeof updateDashboardKPI === "function") {
-    updateDashboardKPI();
-  }
-
-  drawIncomeChart();
-  drawExpenseChart();
-  drawCashFlowChart();
-}
-
-updateDashboardKPI();
-
 function getLastSixMonths() {
   const months = [];
   const now = new Date();
@@ -1119,17 +852,11 @@ function getLastSixMonths() {
   return months;
 }
 
-function getOperationsPLN() {
-  return operations.filter(function(op) {
-    return op.currency === "PLN";
-  });
-}
-
 function buildMonthlyData() {
   const months = getLastSixMonths();
 
   const income = months.map(function(month) {
-    return getOperationsPLN()
+    return getPLNOperations()
       .filter(function(op) {
         return op.type === "Доход" && op.date.slice(0, 7) === month.key;
       })
@@ -1139,7 +866,7 @@ function buildMonthlyData() {
   });
 
   const expense = months.map(function(month) {
-    return getOperationsPLN()
+    return getPLNOperations()
       .filter(function(op) {
         return op.type === "Расход" && op.date.slice(0, 7) === month.key;
       })
@@ -1148,13 +875,11 @@ function buildMonthlyData() {
       }, 0);
   });
 
-  const hasRealData = income.some(function(v) { return v > 0; }) || expense.some(function(v) { return v > 0; });
-
-  if (!hasRealData) {
+  if (!hasRealOperations()) {
     return {
       labels: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"],
-      income: [3000, 5000, 8000, 12000, 18000, 25383],
-      expense: [1000, 2000, 3000, 5000, 7000, 9337]
+      income: DEMO_INCOME,
+      expense: DEMO_EXPENSE
     };
   }
 
@@ -1170,7 +895,7 @@ function buildMonthlyData() {
 function buildExpenseCategories() {
   const result = {};
 
-  getOperationsPLN()
+  getPLNOperations()
     .filter(function(op) {
       return op.type === "Расход";
     })
@@ -1182,7 +907,7 @@ function buildExpenseCategories() {
       result[op.category] += Number(op.amount);
     });
 
-  const data = Object.keys(result)
+  let data = Object.keys(result)
     .map(function(category) {
       return {
         label: category,
@@ -1195,13 +920,13 @@ function buildExpenseCategories() {
     .slice(0, 6);
 
   if (data.length === 0) {
-    return [
-      { label: "Квартира", value: 3043, color: "#3b82f6" },
-      { label: "Подарки", value: 2050, color: "#22c55e" },
-      { label: "Маме", value: 2000, color: "#f59e0b" },
-      { label: "Бедренка", value: 1270, color: "#a855f7" },
-      { label: "Интернет", value: 50, color: "#06b6d4" },
-      { label: "Зал", value: 50, color: "#ef4444" }
+    data = [
+      { label: "Квартира", value: 3043 },
+      { label: "Подарки", value: 2050 },
+      { label: "Маме", value: 2000 },
+      { label: "Бедренка", value: 1270 },
+      { label: "Интернет", value: 50 },
+      { label: "Зал", value: 50 }
     ];
   }
 
@@ -1211,9 +936,7 @@ function buildExpenseCategories() {
     "#f59e0b",
     "#a855f7",
     "#06b6d4",
-    "#ef4444",
-    "#14b8a6",
-    "#f97316"
+    "#ef4444"
   ];
 
   return data.map(function(item, index) {
@@ -1225,7 +948,151 @@ function buildExpenseCategories() {
   });
 }
 
-drawIncomeChart = function() {
+function renderTopExpenses() {
+  const panels = document.querySelectorAll(".panel");
+  let topPanel = null;
+
+  panels.forEach(function(panel) {
+    if (panel.textContent.includes("TOP расходов")) {
+      topPanel = panel;
+    }
+  });
+
+  if (!topPanel) return;
+
+  const title = topPanel.querySelector(".panel-title");
+  topPanel.innerHTML = "";
+  topPanel.appendChild(title);
+
+  const expenseData = buildExpenseCategories().slice(0, 5);
+
+  expenseData.forEach(function(item) {
+    const row = document.createElement("div");
+    row.className = "list-row";
+
+    row.innerHTML = `
+      <span>${item.label}</span>
+      <span>${formatMoney(item.value)} PLN</span>
+    `;
+
+    topPanel.appendChild(row);
+  });
+}
+
+function updateGoalAndForecast() {
+  const balance = hasRealOperations() ? getBalance() : 16046;
+  const remaining = Math.max(0, GOAL_AMOUNT - balance);
+
+  const goalPercent = Math.max(
+    0,
+    Math.min(100, Math.round((balance / GOAL_AMOUNT) * 100))
+  );
+
+  const monthlyData = buildMonthlyData();
+
+  const cashFlow = monthlyData.income.map(function(value, index) {
+    return value - monthlyData.expense[index];
+  });
+
+  const activeCashFlow = cashFlow.filter(function(value) {
+    return value !== 0;
+  });
+
+  let averageCashFlow = 0;
+
+  if (activeCashFlow.length > 0) {
+    averageCashFlow = Math.round(
+      activeCashFlow.reduce(function(sum, value) {
+        return sum + value;
+      }, 0) / activeCashFlow.length
+    );
+  }
+
+  if (!hasRealOperations()) {
+    averageCashFlow = 16046;
+  }
+
+  const forecastNextMonth = balance + averageCashFlow;
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div class="big-number">
+          ${formatMoney(GOAL_AMOUNT)} PLN
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">
+          Накоплено: ${formatMoney(balance)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Осталось: ${formatMoney(remaining)} PLN
+        </div>
+
+        <div style="margin-top:8px;color:#94a3b8;">
+          Прогресс: ${goalPercent}%
+        </div>
+      `;
+    }
+  });
+
+  const forecastCards = document.querySelectorAll(".mini-card");
+
+  forecastCards.forEach(function(card) {
+    const title = card.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Прогноз баланса")) {
+      card.innerHTML = `
+        <div class="panel-title">🔮 Прогноз баланса</div>
+
+        <div class="forecast-number">
+          ${formatMoney(forecastNextMonth)} PLN
+        </div>
+
+        <div class="forecast-text">
+          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
+          <br><br>
+          <b>${formatMoney(forecastNextMonth)} PLN</b>
+          <br><br>
+          Средний чистый поток:
+          <b>${averageCashFlow >= 0 ? "+" : ""}${formatMoney(averageCashFlow)} PLN</b>
+        </div>
+      `;
+    }
+  });
+}
+
+function prepareCanvas(id, fixedHeight) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+
+  const parent = canvas.parentElement;
+  const width = parent.clientWidth || 800;
+  const height = fixedHeight || parent.clientHeight || 320;
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = "100%";
+  canvas.style.height = height + "px";
+  canvas.style.display = "block";
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+
+  return { ctx, width, height };
+}
+
+function drawIncomeChart() {
   const chart = prepareCanvas("incomeChart", 320);
   if (!chart) return;
 
@@ -1235,14 +1102,15 @@ drawIncomeChart = function() {
   const padding = 45;
 
   const data = buildMonthlyData();
-
   const labels = data.labels;
   const income = data.income;
   const expense = data.expense;
 
-  const maxIncome = Math.max.apply(null, income);
-  const maxExpense = Math.max.apply(null, expense);
-  const maxValue = Math.max(1000, maxIncome, maxExpense) * 1.15;
+  const maxValue = Math.max(
+    1000,
+    Math.max.apply(null, income),
+    Math.max.apply(null, expense)
+  ) * 1.15;
 
   ctx.fillStyle = "#1e293b";
   ctx.fillRect(0, 0, width, height);
@@ -1274,11 +1142,8 @@ drawIncomeChart = function() {
       const x = getX(index);
       const y = getY(value);
 
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
 
     ctx.strokeStyle = color;
@@ -1321,9 +1186,9 @@ drawIncomeChart = function() {
 
   ctx.fillStyle = "#ef4444";
   ctx.fillText("Расходы", padding + 90, 24);
-};
+}
 
-drawExpenseChart = function() {
+function drawExpenseChart() {
   const chart = prepareCanvas("expenseChart", 320);
   if (!chart) return;
 
@@ -1367,7 +1232,7 @@ drawExpenseChart = function() {
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 26px Segoe UI";
   ctx.textAlign = "center";
-  ctx.fillText(total.toLocaleString("ru-RU"), centerX, centerY - 4);
+  ctx.fillText(formatMoney(total), centerX, centerY - 4);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "13px Segoe UI";
@@ -1388,9 +1253,9 @@ drawExpenseChart = function() {
     ctx.fillStyle = "#ffffff";
     ctx.fillText(item.label, x + 20, y + 11);
   });
-};
+}
 
-drawCashFlowChart = function() {
+function drawCashFlowChart() {
   const chart = prepareCanvas("cashFlowChart", 300);
   if (!chart) return;
 
@@ -1400,14 +1265,15 @@ drawCashFlowChart = function() {
   const padding = 45;
 
   const data = buildMonthlyData();
-
   const labels = data.labels;
   const inflow = data.income;
   const outflow = data.expense;
 
-  const maxInflow = Math.max.apply(null, inflow);
-  const maxOutflow = Math.max.apply(null, outflow);
-  const maxValue = Math.max(1000, maxInflow, maxOutflow) * 1.15;
+  const maxValue = Math.max(
+    1000,
+    Math.max.apply(null, inflow),
+    Math.max.apply(null, outflow)
+  ) * 1.15;
 
   ctx.fillStyle = "#1e293b";
   ctx.fillRect(0, 0, width, height);
@@ -1450,266 +1316,25 @@ drawCashFlowChart = function() {
   });
 
   ctx.textAlign = "left";
-
   ctx.fillStyle = "#22c55e";
   ctx.font = "14px Segoe UI";
   ctx.fillText("Приток", padding, 22);
 
   ctx.fillStyle = "#ef4444";
   ctx.fillText("Отток", padding + 85, 22);
-};
-
-function refreshDynamicCharts() {
-  drawIncomeChart();
-  drawExpenseChart();
-  drawCashFlowChart();
-
-  if (typeof updateDashboardKPI === "function") {
-    updateDashboardKPI();
-  }
 }
 
-const addOperationOriginalForCharts = addOperation;
-
-addOperation = function() {
-  addOperationOriginalForCharts();
-  refreshDynamicCharts();
-};
-
-const clearOperationsOriginalForCharts = clearOperations;
-
-clearOperations = function() {
-  clearOperationsOriginalForCharts();
-  refreshDynamicCharts();
-};
-
-if (typeof deleteOperation === "function") {
-  const deleteOperationOriginalForCharts = deleteOperation;
-};
-
-function getDashboardMoneyStateForGoal() {
-  const totalIncome = hasRealOperations() ? getTotalIncome() : 25383;
-  const totalExpense = hasRealOperations() ? getTotalExpense() : 9337;
-  const balance = totalIncome - totalExpense;
-
-  return {
-    income: totalIncome,
-    expense: totalExpense,
-    balance: balance
-  };
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
 }
-
-function calculateAverageMonthlyCashFlow() {
-  const monthlyData = buildMonthlyData();
-
-  const cashFlow = monthlyData.income.map(function(incomeValue, index) {
-    return incomeValue - monthlyData.expense[index];
-  });
-
-  const activeMonths = cashFlow.filter(function(value) {
-    return value !== 0;
-  });
-
-  if (activeMonths.length === 0) {
-    return 16046;
-  }
-
-  const average = activeMonths.reduce(function(sum, value) {
-    return sum + value;
-  }, 0) / activeMonths.length;
-
-  return Math.round(average);
-}
-
-function updateGoalAndForecast() {
-  const goalAmount = 100000;
-
-  const state = getDashboardMoneyStateForGoal();
-  const balance = state.balance;
-
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const remaining = Math.max(0, goalAmount - balance);
-  const averageCashFlow = calculateAverageMonthlyCashFlow();
-  const forecastNextMonth = balance + averageCashFlow;
-
-  const goalKpi = document.getElementById("kpiGoal");
-
-  if (goalKpi) {
-    goalKpi.textContent = goalPercent + "%";
-
-    const goalCard = goalKpi.closest(".card");
-
-    if (goalCard) {
-      const note = goalCard.querySelector(".card-note");
-
-      if (note) {
-        note.textContent =
-          formatMoney(balance) + " / " + formatMoney(goalAmount);
-      }
-    }
-  }
-
-  const progressFill = document.querySelector(".progress-fill");
-
-  if (progressFill) {
-    progressFill.style.width = goalPercent + "%";
-  }
-
-  const panels = document.querySelectorAll(".panel");
-
-  panels.forEach(function(panel) {
-    if (panel.textContent.includes("Финансовая цель")) {
-      panel.innerHTML = `
-        <div class="panel-title">🎯 Финансовая цель</div>
-
-        <div class="big-number">
-          ${formatMoney(goalAmount)} PLN
-        </div>
-
-        <div class="progress">
-          <div class="progress-fill" style="width:${goalPercent}%"></div>
-        </div>
-
-        <div style="margin-top:16px;">
-          Накоплено: ${formatMoney(balance)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${formatMoney(remaining)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Прогресс: ${goalPercent}%
-        </div>
-      `;
-    }
-  });
-
-  const forecastCards = document.querySelectorAll(".mini-card");
-
-  forecastCards.forEach(function(card) {
-    if (card.textContent.includes("Прогноз баланса")) {
-      card.innerHTML = `
-        <div class="panel-title">🔮 Прогноз баланса</div>
-
-        <div class="forecast-number">
-          ${formatMoney(forecastNextMonth)} PLN
-        </div>
-
-        <div class="forecast-text">
-          Если текущий темп сохранится, через 1 месяц баланс может быть примерно:
-          <br><br>
-          <b>${formatMoney(forecastNextMonth)} PLN</b>
-          <br><br>
-          Средний чистый поток:
-          <b>${averageCashFlow >= 0 ? "+" : ""}${formatMoney(averageCashFlow)} PLN</b>
-        </div>
-      `;
-    }
-  });
-}
-
-const renderAllOriginalForGoalAndForecast = renderAll;
-
-renderAll = function() {
-  renderAllOriginalForGoalAndForecast();
-  updateGoalAndForecast();
-};
-
-updateGoalAndForecast();
-
-function updateGoalAndForecastLive() {
-  const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
-
-  const plnOperations = savedOperations.filter(function(op) {
-    return op.currency === "PLN";
-  });
-
-  const totalIncome = plnOperations
-    .filter(function(op) {
-      return op.type === "Доход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  const totalExpense = plnOperations
-    .filter(function(op) {
-      return op.type === "Расход";
-    })
-    .reduce(function(sum, op) {
-      return sum + Number(op.amount);
-    }, 0);
-
-  const balance = totalIncome - totalExpense;
-
-  const goalAmount = 100000;
-  const goalPercent = Math.max(
-    0,
-    Math.min(100, Math.round((balance / goalAmount) * 100))
-  );
-
-  const remaining = Math.max(0, goalAmount - balance);
-
-  function formatMoney(value) {
-    return Math.round(value).toLocaleString("ru-RU");
-  }
-
-  let averageCashFlow = balance;
-
-  if (averageCashFlow === 0) {
-    averageCashFlow = 16046;
-  }
-
-  const forecastNextMonth = balance + averageCashFlow;
-
-  const kpiGoal = document.getElementById("kpiGoal");
-
-  if (kpiGoal) {
-    kpiGoal.textContent = goalPercent + "%";
-
-    const card = kpiGoal.closest(".card");
-
-    if (card) {
-      const note = card.querySelector(".card-note");
-
-      if (note) {
-        note.textContent = formatMoney(balance) + " / " + formatMoney(goalAmount);
-      }
-    }
-  }
-
-  const goalPanels = document.querySelectorAll(".panel");
-
-  goalPanels.forEach(function(panel) {
-    const title = panel.querySelector(".panel-title");
-
-    if (title && title.textContent.includes("Финансовая цель")) {
-      panel.innerHTML = `
-        <div class="panel-title">🎯 Финансовая цель</div>
-
-        <div class="big-number">
-          ${formatMoney(goalAmount)} PLN
-        </div>
-
-        <div class="progress">
-          <div class="progress-fill" style="width:${goalPercent}%"></div>
-        </div>
-
-        <div style="margin-top:16px;">
-          Накоплено: ${formatMoney(balance)} PLN
-        </div>
-
-        <div style="margin-top:8px;color:#94a3b8;">
-          Осталось: ${formatMoney(remaining)} PLN
-        </div>
-
-        <div 
-
 </script>
 
 </body>
