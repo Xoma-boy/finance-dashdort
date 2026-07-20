@@ -619,6 +619,146 @@ canvas {
 </div>
 
 <script>
+async function fetchLiveRatesFromAPI() {
+  const statusBox = document.getElementById("apiRatesStatusLive");
+
+  function setStatus(text, color) {
+    if (statusBox) {
+      statusBox.textContent = text;
+      statusBox.style.color = color || "#94a3b8";
+    }
+  }
+
+  try {
+    setStatus("Загружаю актуальные курсы...", "#fbbf24");
+
+    const eurResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/EUR/?format=json");
+    const usdResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json");
+
+    if (!eurResponse.ok || !usdResponse.ok) {
+      throw new Error("NBP API error");
+    }
+
+    const eurData = await eurResponse.json();
+    const usdData = await usdResponse.json();
+
+    const eurRate = Number(eurData.rates[0].mid);
+    const usdRate = Number(usdData.rates[0].mid);
+
+    const cryptoResponse = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_last_updated_at=true"
+    );
+
+    if (!cryptoResponse.ok) {
+      throw new Error("CoinGecko API error");
+    }
+
+    const cryptoData = await cryptoResponse.json();
+
+    const btcUsd = Number(cryptoData.bitcoin.usd);
+    const ethUsd = Number(cryptoData.ethereum.usd);
+
+    const btcPln = btcUsd * usdRate;
+    const ethPln = ethUsd * usdRate;
+
+    localStorage.setItem("rate_EUR", String(eurRate));
+    localStorage.setItem("rate_USD", String(usdRate));
+    localStorage.setItem("rate_CRYPTO", String(btcPln));
+    localStorage.setItem("rate_BTC", String(btcPln));
+    localStorage.setItem("rate_ETH", String(ethPln));
+
+    const eurInput = document.getElementById("rateEURLive");
+    const usdInput = document.getElementById("rateUSDLive");
+    const cryptoInput = document.getElementById("rateCRYPTOLive");
+
+    if (eurInput) eurInput.value = eurRate.toFixed(4);
+    if (usdInput) usdInput.value = usdRate.toFixed(4);
+    if (cryptoInput) cryptoInput.value = btcPln.toFixed(2);
+
+    setStatus(
+      "Kursy pobrane: EUR " +
+      eurRate.toFixed(4) +
+      " PLN, USD " +
+      usdRate.toFixed(4) +
+      " PLN, BTC " +
+      Math.round(btcPln).toLocaleString("ru-RU") +
+      " PLN",
+      "#22c55e"
+    );
+
+    if (typeof renderAll === "function") {
+      renderAll();
+    }
+
+    if (typeof renderIncomeSourcesLive === "function") {
+      renderIncomeSourcesLive();
+    }
+
+    if (typeof updateCustomGoalLive === "function") {
+      updateCustomGoalLive();
+    }
+
+    if (typeof renderExpenseCalendarLive === "function") {
+      renderExpenseCalendarLive();
+    }
+
+  } catch (error) {
+    console.error(error);
+
+    setStatus(
+      "Не удалось загрузить курсы. Используются сохранённые или ручные значения.",
+      "#ef4444"
+    );
+  }
+}
+
+function addApiRatesButtonLive() {
+  const ratesPanel = document.getElementById("currencyRatesPanelLive");
+
+  if (!ratesPanel) return;
+
+  if (document.getElementById("loadRatesApiButtonLive")) return;
+
+  const firstBox = ratesPanel.querySelector(".form-box");
+
+  if (!firstBox) return;
+
+  const info = document.createElement("div");
+
+  info.innerHTML = `
+    <div style="margin-top:16px;">
+      <button
+        id="loadRatesApiButtonLive"
+        onclick="fetchLiveRatesFromAPI()"
+        style="
+          padding:13px 18px;
+          border:none;
+          border-radius:12px;
+          background:#a855f7;
+          color:white;
+          font-weight:900;
+          cursor:pointer;
+          margin-right:10px;
+        "
+      >
+        Загрузить курсы с API
+      </button>
+
+      <span id="apiRatesStatusLive" style="color:#94a3b8;font-size:13px;">
+        Курсы можно обновить автоматически
+      </span>
+    </div>
+  `;
+
+  firstBox.appendChild(info);
+}
+
+window.addEventListener("load", function() {
+  setTimeout(function() {
+    addApiRatesButtonLive();
+  }, 300);
+});
+
 function renderExpenseCalendarLive() {
   const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
