@@ -981,6 +981,96 @@ function exportOperations() {
 
   URL.revokeObjectURL(url);
 }
+
+function formatMoney(value) {
+  return Math.round(value).toLocaleString("ru-RU");
+}
+
+function updateDashboardKPI() {
+  const plnOperations = operations.filter(function(op) {
+    return op.currency === "PLN";
+  });
+
+  const totalIncome = plnOperations
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const totalExpense = plnOperations
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const balance = totalIncome - totalExpense;
+
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((balance / totalIncome) * 100);
+  }
+
+  const goalAmount = 100000;
+  let goalPercent = 0;
+
+  if (goalAmount > 0) {
+    goalPercent = Math.max(0, Math.min(100, Math.round((balance / goalAmount) * 100)));
+  }
+
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+
+  if (incomeEl) {
+    incomeEl.textContent = formatMoney(totalIncome);
+  }
+
+  if (expenseEl) {
+    expenseEl.textContent = formatMoney(totalExpense);
+  }
+
+  if (balanceEl) {
+    balanceEl.textContent = formatMoney(balance);
+  }
+
+  if (savingsEl) {
+    savingsEl.textContent = savingsRate + "%";
+  }
+
+  if (goalEl) {
+    goalEl.textContent = goalPercent + "%";
+  }
+
+  const progressFill = document.querySelector(".progress-fill");
+
+  if (progressFill) {
+    progressFill.style.width = goalPercent + "%";
+  }
+}
+
+const oldAddOperation = addOperation;
+
+addOperation = function() {
+  oldAddOperation();
+  updateDashboardKPI();
+};
+
+const oldClearOperations = clearOperations;
+
+clearOperations = function() {
+  oldClearOperations();
+  updateDashboardKPI();
+};
+
+updateDashboardKPI();
+
 </script>
 
 </body>
