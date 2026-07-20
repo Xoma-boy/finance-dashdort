@@ -607,6 +607,7 @@ canvas {
               <th>Категория</th>
               <th>Название</th>
               <th>Сумма</th>
+              <th>Действие</th>
             </tr>
           </thead>
           <tbody id="operationsBody"></tbody>
@@ -946,6 +947,19 @@ function renderOperations() {
         <td>${op.category}</td>
         <td>${op.name}</td>
         <td>${sign}${op.amount.toLocaleString("ru-RU")} ${op.currency}</td>
+        <td>
+          <button onclick="deleteOperation(${op.id})" style="
+            background:#ef4444;
+            color:white;
+            border:none;
+            border-radius:8px;
+            padding:6px 10px;
+            cursor:pointer;
+            font-weight:700;
+          ">
+            Удалить
+          </button>
+        </td>
       </tr>
     `;
   }).join("");
@@ -1068,6 +1082,24 @@ clearOperations = function() {
   oldClearOperations();
   updateDashboardKPI();
 };
+
+function deleteOperation(id) {
+  operations = operations.filter(function(op) {
+    return op.id !== id;
+  });
+
+  localStorage.setItem("financeOperations", JSON.stringify(operations));
+
+  renderOperations();
+
+  if (typeof updateDashboardKPI === "function") {
+    updateDashboardKPI();
+  }
+
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+}
 
 updateDashboardKPI();
 
