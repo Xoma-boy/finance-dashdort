@@ -781,11 +781,21 @@ window.addEventListener("load", function() {
   }, 100);
 });
 
-document.addEventListener("click", function() {
+window.addEventListener("load", function() {
   setTimeout(function() {
     updateCustomGoalLive();
-  }, 150);
+  }, 100);
 });
+
+const oldRenderAllForGoalInput = renderAll;
+
+renderAll = function() {
+  oldRenderAllForGoalInput();
+
+  setTimeout(function() {
+    updateCustomGoalLive();
+  }, 50);
+};
 
 function renderIncomeSourcesLive() {
   const savedOperations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
