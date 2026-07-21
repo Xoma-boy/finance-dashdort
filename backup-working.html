@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Dashboard Pro</title>
+
+<style>
+:root {
+  --bg: #0b1220;
+  --sidebar: #111827;
+  --card: #1e293b;
+  --card-dark: #0f172a;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --yellow: #fbbf24;
+  --purple: #a855f7;
+  --muted: #94a3b8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Segoe UI, Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: #fff;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--sidebar);
+  padding: 26px 22px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 34px;
+  color: var(--green);
+}
+
+.logo span {
+  color: #fff;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-item {
+  background: #1e293b;
+  padding: 16px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.main {
+  padding: 28px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.subtitle {
+  color: #9fb3d1;
+  margin-top: 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  background: #1e293b;
+  color: #fff;
+  padding: 13px 18px;
+  font-weight: 800;
+}
+
+.btn-primary {
+  background: var(--blue);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.card,
+.panel,
+.mini-card,
+.form-box,
+.history-box {
+  background: linear-gradient(145deg, #1e293b, #111827);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.25);
+}
+
+.card-label {
+  color: #a9bdd8;
+  font-size: 15px;
+}
+
+.card-value {
+  font-size: 38px;
+  font-weight: 900;
+  margin-top: 12px;
+}
+
+.card-note {
+  margin-top: 12px;
+  color: #a9bdd8;
+  font-size: 13px;
+}
+
+.green { color: var(--green); }
+.red { color: var(--red); }
+.blue { color: var(--blue); }
+.yellow { color: var(--yellow); }
+.purple { color: var(--purple); }
+
+.grid-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.panel-title {
+  font-size: 22px;
+  font-weight: 900;
+  margin-bottom: 18px;
+}
+
+.chart-box {
+  height: 340px;
+  position: relative;
+}
+
+.grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.list-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.big-number {
+  font-size: 40px;
+  font-weight: 900;
+  margin-top: 12px;
+}
+
+.progress {
+  height: 20px;
+  background: #334155;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 16%;
+  background: linear-gradient(90deg, #22c55e, #84cc16);
+}
+
+.extra-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.cashflow-box,
+.forecast-box,
+.calendar-box {
+  height: 300px;
+  position: relative;
+}
+
+.forecast-number {
+  font-size: 38px;
+  font-weight: 900;
+  color: var(--blue);
+  margin-top: 20px;
+}
+
+.forecast-text {
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.day-cell {
+  height: 28px;
+  border-radius: 7px;
+  background: #334155;
+}
+
+.day-low {
+  background: rgba(34,197,94,0.35);
+}
+
+.day-mid {
+  background: rgba(251,191,36,0.65);
+}
+
+.day-high {
+  background: rgba(239,68,68,0.75);
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.operations-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0f172a;
+  color: #fff;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: #64748b;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.form-btn {
+  padding: 13px 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--blue);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.form-btn-green {
+  background: var(--green);
+}
+
+.form-btn-danger {
+  background: var(--red);
+}
+
+.operation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+}
+
+.operation-table th,
+.operation-table td {
+  text-align: left;
+  padding: 11px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.operation-table th {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.badge-income {
+  color: var(--green);
+  font-weight: 900;
+}
+
+.badge-expense {
+  color: var(--red);
+  font-weight: 900;
+}
+
+canvas {
+  display: block;
+}
+
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid,
+  .grid-main,
+  .grid-bottom,
+  .extra-grid,
+  .operations-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="logo">💰 <span>Finance</span></div>
+
+    <div class="menu">
+      <div class="menu-item">📊 Dashboard</div>
+      <div class="menu-item">📈 Доходы</div>
+      <div class="menu-item">💸 Расходы</div>
+      <div class="menu-item">🎯 Финансовая цель</div>
+      <div class="menu-item">₿ Крипта</div>
+      <div class="menu-item">📈 Акции</div>
+      <div class="menu-item">💼 Инвестиции</div>
+      <div class="menu-item">⚙️ Настройки</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="title">Financial Dashboard</div>
+        <div class="subtitle">Контроль доходов, расходов и инвестиций</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn">PLN</button>
+        <button class="btn">EUR</button>
+        <button class="btn">USD</button>
+        <button class="btn btn-primary">Добавить</button>
+      </div>
+    </div>
+
+    <section class="kpi-grid">
+      <div class="card">
+        <div class="card-label">Общий доход</div>
+        <div id="kpiIncome" class="card-value green">25 383</div>
+        <div class="card-note">▲ +12.4% к прошлому месяцу</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Общие расходы</div>
+        <div id="kpiExpense" class="card-value red">9 337</div>
+        <div class="card-note">▼ -2.7% к прошлому месяцу</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Баланс</div>
+        <div id="kpiBalance" class="card-value blue">16 046</div>
+        <div class="card-note">Текущий остаток</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Накопления</div>
+        <div id="kpiSavings" class="card-value yellow">63%</div>
+        <div class="card-note">От дохода</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Финансовая цель</div>
+        <div id="kpiGoal" class="card-value purple">16%</div>
+        <div class="card-note">16 046 / 100 000</div>
+      </div>
+    </section>
+
+    <section class="grid-main">
+      <div class="panel">
+        <div class="panel-title">📈 Динамика доходов и расходов</div>
+        <div class="chart-box">
+          <canvas id="incomeChart"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">🍩 Структура расходов</div>
+        <div class="chart-box">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-bottom">
+      <div class="panel">
+        <div class="panel-title">💵 Доходы по источникам</div>
+        <div class="list-row"><span>Зарплата</span><span>9 195 PLN</span></div>
+        <div class="list-row"><span>Сбережения</span><span>16 000 PLN</span></div>
+        <div class="list-row"><span>Инвестиции</span><span>0 PLN</span></div>
+        <div class="list-row"><span>Крипта</span><span>0 PLN</span></div>
+        <div class="list-row"><span>Акции</span><span>0 PLN</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">🔥 TOP расходов</div>
+        <div class="list-row"><span>Квартира</span><span>3043 PLN</span></div>
+        <div class="list-row"><span>Подарки</span><span>2050 PLN</span></div>
+        <div class="list-row"><span>Маме</span><span>2000 PLN</span></div>
+        <div class="list-row"><span>Бедренка</span><span>1270 PLN</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">🎯 Финансовая цель</div>
+        <div class="big-number">100 000 PLN</div>
+        <div class="progress">
+          <div class="progress-fill"></div>
+        </div>
+        <div style="margin-top: 16px;">Накоплено: 16 046 PLN</div>
+        <div style="margin-top: 8px; color: #94a3b8;">Осталось: 83 954 PLN</div>
+      </div>
+    </section>
+
+    <section class="extra-grid">
+      <div class="mini-card">
+        <div class="panel-title">📊 Cash Flow</div>
+        <div class="cashflow-box">
+          <canvas id="cashFlowChart"></canvas>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="panel-title">🔮 Прогноз баланса</div>
+        <div class="forecast-number">32 092 PLN</div>
+        <div class="forecast-text">
+          Если текущий темп сохранится, через 1 месяц баланс может увеличиться примерно в 2 раза.
+          <br><br>
+          Средний чистый поток: <b>+16 046 PLN</b>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <div class="panel-title">📅 Календарь трат</div>
+
+        <div class="calendar-grid">
+          <div class="day-cell day-low"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-mid"></div>
+          <div class="day-cell day-high"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-low"></div>
+          <div class="day-cell"></div>
+
+          <div class="day-cell"></div>
+          <div class="day-cell day-high"></div>
+          <div class="day-cell day-mid"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-low"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell"></div>
+
+          <div class="day-cell day-low"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-mid"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-high"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-low"></div>
+
+          <div class="day-cell"></div>
+          <div class="day-cell day-mid"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-low"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell"></div>
+          <div class="day-cell day-high"></div>
+        </div>
+
+        <div class="calendar-legend">
+          <span><span class="legend-dot" style="background:#22c55e;"></span>мало</span>
+          <span><span class="legend-dot" style="background:#fbbf24;"></span>средне</span>
+          <span><span class="legend-dot" style="background:#ef4444;"></span>много</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="operations-grid">
+      <div class="form-box">
+        <div class="panel-title">➕ Добавить операцию</div>
+
+        <div class="form-grid">
+          <input id="opName" class="form-input" placeholder="Название операции">
+          <input id="opAmount" class="form-input" type="number" placeholder="Сумма">
+
+          <select id="opType" class="form-select">
+            <option value="Доход">Доход</option>
+            <option value="Расход">Расход</option>
+          </select>
+
+          <select id="opCurrency" class="form-select">
+            <option value="PLN">PLN</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="CRYPTO">Crypto</option>
+            <option value="STOCKS">Stocks</option>
+          </select>
+
+          <select id="opCategory" class="form-select">
+            <option value="Зарплата">Зарплата</option>
+            <option value="Бизнес">Бизнес</option>
+            <option value="Инвестиции">Инвестиции</option>
+            <option value="Крипта">Крипта</option>
+            <option value="Акции">Акции</option>
+            <option value="Еда">Еда</option>
+            <option value="Жилье">Жилье</option>
+            <option value="Авто">Авто</option>
+            <option value="Топливо">Топливо</option>
+            <option value="Путешествия">Путешествия</option>
+            <option value="Кафе">Кафе</option>
+            <option value="Подписки">Подписки</option>
+            <option value="Одежда">Одежда</option>
+            <option value="Здоровье">Здоровье</option>
+            <option value="Подарки">Подарки</option>
+            <option value="Развлечения">Развлечения</option>
+            <option value="Прочее">Прочее</option>
+          </select>
+
+          <input id="opDate" class="form-input" type="date">
+        </div>
+
+        <div class="form-actions">
+          <button class="form-btn form-btn-green" onclick="addOperation()">Добавить</button>
+          <button class="form-btn" onclick="exportOperations()">Экспорт CSV</button>
+          <button class="form-btn form-btn-danger" onclick="clearOperations()">Очистить</button>
+        </div>
+      </div>
+
+      <div class="history-box">
+        <div class="panel-title">📋 Журнал операций</div>
+
+        <table class="operation-table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Тип</th>
+              <th>Категория</th>
+              <th>Название</th>
+              <th>Сумма</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody id="operationsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
+
+let incomeChartPoints = [];
+let expenseChartSegments = [];
+
+function money(value) {
+  return Math.round(Number(value) || 0).toLocaleString("ru-RU");
+}
+
+function getGoalAmount() {
+  return Number(localStorage.getItem("financeGoalAmount")) || 100000;
+}
+
+function getTodayISO() {
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+}
+
+function getCurrentMonthISO() {
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+}
+
+function getCurrentYearISO() {
+  return String(new Date().getFullYear());
+}
+
+function ensureStyle(id, css) {
+  if (document.getElementById(id)) return;
+
+  const style = document.createElement("style");
+  style.id = id;
+  style.innerHTML = css;
+  document.head.appendChild(style);
+}
+
+function createTooltip() {
+  if (document.getElementById("dashboardTooltip")) return;
+
+  const tooltip = document.createElement("div");
+  tooltip.id = "dashboardTooltip";
+  tooltip.style.position = "fixed";
+  tooltip.style.zIndex = "99999";
+  tooltip.style.pointerEvents = "none";
+  tooltip.style.background = "#020617";
+  tooltip.style.color = "white";
+  tooltip.style.border = "1px solid rgba(255,255,255,0.12)";
+  tooltip.style.borderRadius = "12px";
+  tooltip.style.padding = "10px 12px";
+  tooltip.style.fontSize = "13px";
+  tooltip.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
+  tooltip.style.display = "none";
+  tooltip.style.maxWidth = "280px";
+  document.body.appendChild(tooltip);
+}
+
+function showTooltip(html, x, y) {
+  createTooltip();
+
+  const tooltip = document.getElementById("dashboardTooltip");
+  tooltip.innerHTML = html;
+  tooltip.style.left = x + 14 + "px";
+  tooltip.style.top = y + 14 + "px";
+  tooltip.style.display = "block";
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById("dashboardTooltip");
+  if (tooltip) tooltip.style.display = "none";
+}
+
+function isSavingsCategoryName(category) {
+  if (!category) return false;
+
+  const name = String(category).toLowerCase().trim();
+
+  return (
+    name === "накопления" ||
+    name === "сбережения" ||
+    name === "отложить" ||
+    name === "отложено" ||
+    name === "saving" ||
+    name === "savings"
+  );
+}
+
+function isSavingsOperation(op) {
+  return op.type === "Накопления" || isSavingsCategoryName(op.category);
+}
+
+function addSavingsTypeAndCategory() {
+  const typeSelect = document.getElementById("opType");
+  const categorySelect = document.getElementById("opCategory");
+
+  if (typeSelect) {
+    const existingTypes = Array.from(typeSelect.options).map(function(option) {
+      return option.value;
+    });
+
+    if (!existingTypes.includes("Накопления")) {
+      const option = document.createElement("option");
+      option.value = "Накопления";
+      option.textContent = "Накопления";
+      typeSelect.appendChild(option);
+    }
+
+    typeSelect.onchange = function() {
+      if (typeSelect.value === "Накопления" && categorySelect) {
+        categorySelect.value = "Накопления";
+      }
+    };
+  }
+
+  if (categorySelect) {
+    const existingCategories = Array.from(categorySelect.options).map(function(option) {
+      return option.value;
+    });
+
+    ["Накопления", "Сбережения", "Отложить"].forEach(function(category) {
+      if (!existingCategories.includes(category)) {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      }
+    });
+  }
+
+  ensureStyle("financeExtraStyles", `
+    .badge-savings {
+      color: #a855f7;
+      font-weight: 900;
+    }
+
+    #journalFiltersBox {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    @media(max-width: 1200px) {
+      #journalFiltersBox {
+        grid-template-columns: 1fr;
+      }
+    }
+  `);
+}
+
+function getRates() {
+  return {
+    PLN: 1,
+    EUR: Number(localStorage.getItem("rate_EUR")) || 4.3,
+    USD: Number(localStorage.getItem("rate_USD")) || 3.9,
+    CRYPTO: Number(localStorage.getItem("rate_CRYPTO")) || 1,
+    STOCKS: Number(localStorage.getItem("rate_STOCKS")) || 1
+  };
+}
+
+function convertToPLN(op) {
+  const rates = getRates();
+  const rate = rates[op.currency] || 1;
+
+  return {
+    id: op.id,
+    name: op.name,
+    amount: Number(op.amount) * rate,
+    originalAmount: Number(op.amount),
+    type: op.type,
+    currency: "PLN",
+    originalCurrency: op.currency || "PLN",
+    category: op.category,
+    date: op.date
+  };
+}
+
+function renderCurrencyRatesPanel() {
+  if (document.getElementById("currencyRatesPanelLive")) return;
+
+  const main = document.querySelector(".main");
+  if (!main) return;
+
+  const rates = getRates();
+
+  const panel = document.createElement("section");
+  panel.id = "currencyRatesPanelLive";
+  panel.className = "operations-grid";
+
+  panel.innerHTML = `
+    <div class="form-box">
+      <div class="panel-title">💱 Курсы валют к PLN</div>
+
+      <div class="form-grid">
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">EUR → PLN</label>
+          <input id="rateEURLive" class="form-input" type="number" step="0.01" value="${rates.EUR}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">USD → PLN</label>
+          <input id="rateUSDLive" class="form-input" type="number" step="0.01" value="${rates.USD}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Crypto коэффициент</label>
+          <input id="rateCRYPTOLive" class="form-input" type="number" step="0.01" value="${rates.CRYPTO}">
+        </div>
+
+        <div>
+          <label style="color:#94a3b8;font-size:13px;">Stocks коэффициент</label>
+          <input id="rateSTOCKSLive" class="form-input" type="number" step="0.01" value="${rates.STOCKS}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="form-btn form-btn-green" onclick="saveCurrencyRatesLive()">Сохранить курсы</button>
+        <button class="form-btn" onclick="fetchLiveRatesFromAPI()">Загрузить курсы с API</button>
+      </div>
+
+      <div id="apiRatesStatusLive" style="margin-top:12px;color:#94a3b8;font-size:13px;">
+        Можно использовать ручные курсы или загрузить актуальные.
+      </div>
+    </div>
+
+    <div class="history-box">
+      <div class="panel-title">ℹ️ Пересчёт валют</div>
+
+      <div style="color:#94a3b8;line-height:1.7;">
+        EUR, USD, Crypto и Stocks пересчитываются в PLN по указанному курсу.
+        <br><br>
+        Например: 100 EUR × 4.30 = 430 PLN.
+      </div>
+    </div>
+  `;
+
+  const operationsGrid = document.querySelector(".operations-grid");
+
+  if (operationsGrid) {
+    main.insertBefore(panel, operationsGrid);
+  } else {
+    main.appendChild(panel);
+  }
+}
+
+function saveCurrencyRatesLive() {
+  const eur = Number(document.getElementById("rateEURLive").value);
+  const usd = Number(document.getElementById("rateUSDLive").value);
+  const crypto = Number(document.getElementById("rateCRYPTOLive").value);
+  const stocks = Number(document.getElementById("rateSTOCKSLive").value);
+
+  if (!eur || eur <= 0) {
+    alert("Введи корректный курс EUR");
+    return;
+  }
+
+  if (!usd || usd <= 0) {
+    alert("Введи корректный курс USD");
+    return;
+  }
+
+  if (!crypto || crypto <= 0) {
+    alert("Введи корректный коэффициент Crypto");
+    return;
+  }
+
+  if (!stocks || stocks <= 0) {
+    alert("Введи корректный коэффициент Stocks");
+    return;
+  }
+
+  localStorage.setItem("rate_EUR", String(eur));
+  localStorage.setItem("rate_USD", String(usd));
+  localStorage.setItem("rate_CRYPTO", String(crypto));
+  localStorage.setItem("rate_STOCKS", String(stocks));
+
+  renderAll();
+  alert("Курсы сохранены");
+}
+
+async function fetchLiveRatesFromAPI() {
+  const status = document.getElementById("apiRatesStatusLive");
+
+  function setStatus(text, color) {
+    if (!status) return;
+    status.textContent = text;
+    status.style.color = color || "#94a3b8";
+  }
+
+  try {
+    setStatus("Загружаю курсы...", "#fbbf24");
+
+    const eurResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/EUR/?format=json");
+    const usdResponse = await fetch("https://api.nbp.pl/api/exchangerates/rates/A/USD/?format=json");
+
+    if (!eurResponse.ok || !usdResponse.ok) {
+      throw new Error("NBP API error");
+    }
+
+    const eurData = await eurResponse.json();
+    const usdData = await usdResponse.json();
+
+    const eurRate = Number(eurData.rates[0].mid);
+    const usdRate = Number(usdData.rates[0].mid);
+
+    let cryptoRate = Number(localStorage.getItem("rate_CRYPTO")) || 1;
+
+    try {
+      const cryptoResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+
+      if (cryptoResponse.ok) {
+        const cryptoData = await cryptoResponse.json();
+        cryptoRate = Number(cryptoData.bitcoin.usd) * usdRate;
+      }
+    } catch (cryptoError) {
+      console.warn("Crypto API недоступен", cryptoError);
+    }
+
+    localStorage.setItem("rate_EUR", String(eurRate));
+    localStorage.setItem("rate_USD", String(usdRate));
+    localStorage.setItem("rate_CRYPTO", String(cryptoRate));
+
+    const eurInput = document.getElementById("rateEURLive");
+    const usdInput = document.getElementById("rateUSDLive");
+    const cryptoInput = document.getElementById("rateCRYPTOLive");
+
+    if (eurInput) eurInput.value = eurRate.toFixed(4);
+    if (usdInput) usdInput.value = usdRate.toFixed(4);
+    if (cryptoInput) cryptoInput.value = cryptoRate.toFixed(2);
+
+    setStatus(
+      "Курсы загружены: EUR " +
+      eurRate.toFixed(4) +
+      ", USD " +
+      usdRate.toFixed(4) +
+      ", BTC " +
+      money(cryptoRate) +
+      " PLN",
+      "#22c55e"
+    );
+
+    renderAll();
+
+  } catch (error) {
+    console.error(error);
+    setStatus("Не удалось загрузить курсы. Используются ручные значения.", "#ef4444");
+  }
+}
+
+function getPeriodMode() {
+  return localStorage.getItem("financePeriodMode") || "month";
+}
+
+function initPeriodFilter() {
+  const actions = document.querySelector(".actions");
+  if (!actions) return;
+
+  const oldMonthFilter = document.getElementById("monthFilter");
+  if (oldMonthFilter) oldMonthFilter.remove();
+
+  if (document.getElementById("periodFilterBox")) return;
+
+  const box = document.createElement("div");
+  box.id = "periodFilterBox";
+  box.style.display = "flex";
+  box.style.gap = "10px";
+  box.style.flexWrap = "wrap";
+  box.style.alignItems = "center";
+
+  box.innerHTML = `
+    <select id="periodMode" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;cursor:pointer;">
+      <option value="all">Все данные</option>
+      <option value="day">День</option>
+      <option value="month">Месяц</option>
+      <option value="year">Год</option>
+      <option value="custom">Свой период</option>
+    </select>
+
+    <input id="periodDay" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodMonth" type="month" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodYear" type="number" placeholder="Год" style="width:110px;border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodStart" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+    <input id="periodEnd" type="date" style="border:none;border-radius:12px;background:#1e293b;color:white;padding:13px 18px;font-weight:800;">
+
+    <button onclick="applyPeriodFilter()" style="border:none;border-radius:12px;background:#22c55e;color:white;padding:13px 18px;font-weight:900;cursor:pointer;">
+      Применить
+    </button>
+  `;
+
+  actions.prepend(box);
+
+  document.getElementById("periodMode").value = localStorage.getItem("financePeriodMode") || "month";
+  document.getElementById("periodDay").value = localStorage.getItem("financePeriodDay") || getTodayISO();
+  document.getElementById("periodMonth").value = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+  document.getElementById("periodYear").value = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+  document.getElementById("periodStart").value = localStorage.getItem("financePeriodStart") || getTodayISO();
+  document.getElementById("periodEnd").value = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+  document.getElementById("periodMode").addEventListener("change", function() {
+    localStorage.setItem("financePeriodMode", this.value);
+    renderPeriodInputs();
+  });
+
+  renderPeriodInputs();
+}
+
+function renderPeriodInputs() {
+  const mode = getPeriodMode();
+  const day = document.getElementById("periodDay");
+  const month = document.getElementById("periodMonth");
+  const year = document.getElementById("periodYear");
+  const start = document.getElementById("periodStart");
+  const end = document.getElementById("periodEnd");
+
+  if (!day || !month || !year || !start || !end) return;
+
+  day.style.display = mode === "day" ? "block" : "none";
+  month.style.display = mode === "month" ? "block" : "none";
+  year.style.display = mode === "year" ? "block" : "none";
+  start.style.display = mode === "custom" ? "block" : "none";
+  end.style.display = mode === "custom" ? "block" : "none";
+}
+
+function applyPeriodFilter() {
+  const mode = document.getElementById("periodMode").value;
+  localStorage.setItem("financePeriodMode", mode);
+
+  const day = document.getElementById("periodDay").value;
+  const month = document.getElementById("periodMonth").value;
+  const year = document.getElementById("periodYear").value;
+  const start = document.getElementById("periodStart").value;
+  const end = document.getElementById("periodEnd").value;
+
+  if (day) localStorage.setItem("financePeriodDay", day);
+  if (month) localStorage.setItem("financePeriodMonth", month);
+  if (year) localStorage.setItem("financePeriodYear", year);
+  if (start) localStorage.setItem("financePeriodStart", start);
+  if (end) localStorage.setItem("financePeriodEnd", end);
+
+  renderAll();
+}
+
+function getFilteredOperationsRaw() {
+  const mode = getPeriodMode();
+
+  if (mode === "all") return operations;
+
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
+    return operations.filter(function(op) {
+      return op.date === selectedDay;
+    });
+  }
+
+  if (mode === "month") {
+    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+    return operations.filter(function(op) {
+      return op.date && op.date.slice(0, 7) === selectedMonth;
+    });
+  }
+
+  if (mode === "year") {
+    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+    return operations.filter(function(op) {
+      return op.date && op.date.slice(0, 4) === selectedYear;
+    });
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+    return operations.filter(function(op) {
+      return op.date && op.date >= start && op.date <= end;
+    });
+  }
+
+  return operations;
+}
+
+function getConvertedPeriodOperations() {
+  return getFilteredOperationsRaw().map(function(op) {
+    return convertToPLN(op);
+  });
+}
+
+function getIncomeOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return op.type === "Доход";
+  });
+}
+
+function getExpenseOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return op.type === "Расход";
+  });
+}
+
+function getSavingsOperations() {
+  return getConvertedPeriodOperations().filter(function(op) {
+    return isSavingsOperation(op);
+  });
+}
+
+function getTotalIncome() {
+  return getIncomeOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalExpense() {
+  return getExpenseOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getTotalSavings() {
+  return getSavingsOperations().reduce(function(sum, op) {
+    return sum + Number(op.amount);
+  }, 0);
+}
+
+function getBalance() {
+  return getTotalIncome() - getTotalExpense();
+}
+
+function getTotalBalance() {
+  return getBalance() + getTotalSavings();
+}
+
+function ensureTotalBalanceCardExists() {
+  const grid = document.querySelector(".kpi-grid");
+  if (!grid) return;
+  if (document.getElementById("kpiTotalBalance")) return;
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="card-label">Общий баланс</div>
+    <div id="kpiTotalBalance" class="card-value blue">0</div>
+    <div class="card-note">Баланс + накопления</div>
+  `;
+
+  grid.appendChild(card);
+  grid.style.gridTemplateColumns = "repeat(6, 1fr)";
+}
+
+function updateDashboardKPI() {
+  const totalIncome = getTotalIncome();
+  const totalExpense = getTotalExpense();
+  const totalSavings = getTotalSavings();
+  const balance = getBalance();
+  const totalBalance = getTotalBalance();
+
+  let savingsRate = 0;
+
+  if (totalIncome > 0) {
+    savingsRate = Math.round((totalSavings / totalIncome) * 100);
+  }
+
+  const goalAmount = getGoalAmount();
+
+  const goalPercent = Math.max(0, Math.min(100, Math.round((totalSavings / goalAmount) * 100)));
+
+  const incomeEl = document.getElementById("kpiIncome");
+  const expenseEl = document.getElementById("kpiExpense");
+  const balanceEl = document.getElementById("kpiBalance");
+  const savingsEl = document.getElementById("kpiSavings");
+  const goalEl = document.getElementById("kpiGoal");
+  const totalBalanceEl = document.getElementById("kpiTotalBalance");
+
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (expenseEl) expenseEl.textContent = money(totalExpense);
+  if (balanceEl) balanceEl.textContent = money(balance);
+  if (savingsEl) savingsEl.textContent = money(totalSavings);
+  if (goalEl) goalEl.textContent = goalPercent + "%";
+  if (totalBalanceEl) totalBalanceEl.textContent = money(totalBalance);
+
+  if (balanceEl) {
+    const card = balanceEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = "Доход - расходы";
+    }
+  }
+
+  if (savingsEl) {
+    const card = savingsEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = savingsRate + "% от дохода";
+    }
+  }
+
+  if (goalEl) {
+    const card = goalEl.closest(".card");
+    if (card) {
+      const note = card.querySelector(".card-note");
+      if (note) note.textContent = money(totalSavings) + " / " + money(goalAmount);
+    }
+  }
+}
+
+function addOperation() {
+  const name = document.getElementById("opName").value.trim();
+  const amount = Number(document.getElementById("opAmount").value);
+  const selectedType = document.getElementById("opType").value;
+  const currency = document.getElementById("opCurrency").value;
+  const categorySelect = document.getElementById("opCategory");
+  const date = document.getElementById("opDate").value || getTodayISO();
+
+  if (!amount || amount <= 0) {
+    alert("Введи сумму больше 0");
+    return;
+  }
+
+  let type = selectedType;
+  let category = categorySelect.value;
+
+  if (selectedType === "Накопления") {
+    category = "Накопления";
+  }
+
+  const operation = {
+    id: Date.now(),
+    name: name || category,
+    amount: amount,
+    type: type,
+    currency: currency,
+    category: category,
+    date: date
+  };
+
+  operations.unshift(operation);
+  localStorage.setItem("financeOperations", JSON.stringify(operations));
+
+  document.getElementById("opName").value = "";
+  document.getElementById("opAmount").value = "";
+
+  renderAll();
+}
+
+function deleteOperation(id) {
+  operations = operations.filter(function(op) {
+    return op.id !== id;
+  });
+
+  localStorage.setItem("financeOperations", JSON.stringify(operations));
+  renderAll();
+}
+
+function clearOperations() {
+  if (!confirm("Удалить все операции?")) return;
+  operations = [];
+  localStorage.removeItem("financeOperations");
+  renderAll();
+}
+
+function exportOperations() {
+  if (operations.length === 0) {
+    alert("Нет операций для экспорта");
+    return;
+  }
+
+  let csv = "Дата,Тип,Категория,Название,Сумма,Валюта\n";
+
+  operations.forEach(function(op) {
+    csv += `${op.date},${op.type},${op.category},${op.name},${op.amount},${op.currency}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "finance-operations.csv";
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function initJournalFilters() {
+  const historyBox = document.querySelector(".history-box");
+  if (!historyBox) return;
+  if (document.getElementById("journalFiltersBox")) return;
+
+  const filters = document.createElement("div");
+  filters.id = "journalFiltersBox";
+
+  filters.innerHTML = `
+    <input id="journalDateFilter" type="date" class="form-input" title="Фильтр по дате">
+
+    <select id="journalTypeFilter" class="form-select" title="Фильтр по типу">
+      <option value="">Все типы</option>
+      <option value="Доход">Доход</option>
+      <option value="Расход">Расход</option>
+      <option value="Накопления">Накопления</option>
+    </select>
+
+    <input id="journalCategoryFilter" class="form-input" placeholder="Категория">
+    <input id="journalNameFilter" class="form-input" placeholder="Название">
+    <input id="journalMinFilter" type="number" class="form-input" placeholder="Мин. сумма">
+    <input id="journalMaxFilter" type="number" class="form-input" placeholder="Макс. сумма">
+  `;
+
+  const table = historyBox.querySelector(".operation-table");
+
+  if (table) {
+    historyBox.insertBefore(filters, table);
+  } else {
+    historyBox.appendChild(filters);
+  }
+
+  [
+    "journalDateFilter",
+    "journalTypeFilter",
+    "journalCategoryFilter",
+    "journalNameFilter",
+    "journalMinFilter",
+    "journalMaxFilter"
+  ].forEach(function(id) {
+    const el = document.getElementById(id);
+
+    if (el) {
+      el.addEventListener("input", renderOperations);
+      el.addEventListener("change", renderOperations);
+    }
+  });
+}
+
+function getJournalFilteredOperations(rawOperations) {
+  const date = document.getElementById("journalDateFilter") ? document.getElementById("journalDateFilter").value : "";
+  const type = document.getElementById("journalTypeFilter") ? document.getElementById("journalTypeFilter").value : "";
+  const category = document.getElementById("journalCategoryFilter") ? document.getElementById("journalCategoryFilter").value.toLowerCase().trim() : "";
+  const name = document.getElementById("journalNameFilter") ? document.getElementById("journalNameFilter").value.toLowerCase().trim() : "";
+  const minAmount = document.getElementById("journalMinFilter") ? Number(document.getElementById("journalMinFilter").value) : 0;
+  const maxAmount = document.getElementById("journalMaxFilter") ? Number(document.getElementById("journalMaxFilter").value) : 0;
+
+  return rawOperations.filter(function(op) {
+    const converted = convertToPLN(op);
+
+    if (date && op.date !== date) return false;
+    if (type && op.type !== type) return false;
+    if (category && !String(op.category).toLowerCase().includes(category)) return false;
+    if (name && !String(op.name).toLowerCase().includes(name)) return false;
+    if (minAmount && converted.amount < minAmount) return false;
+    if (maxAmount && converted.amount > maxAmount) return false;
+
+    return true;
+  });
+}
+
+function renderOperations() {
+  const tbody = document.getElementById("operationsBody");
+  if (!tbody) return;
+
+  let filteredOperations = getFilteredOperationsRaw();
+  filteredOperations = getJournalFilteredOperations(filteredOperations);
+
+  if (filteredOperations.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="color:#94a3b8;">Нет операций по выбранным фильтрам</td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filteredOperations.slice(0, 50).map(function(op) {
+    const converted = convertToPLN(op);
+
+    let typeClass = "badge-expense";
+    let sign = "-";
+
+    if (op.type === "Доход") {
+      typeClass = "badge-income";
+      sign = "+";
+    }
+
+    if (op.type === "Накопления") {
+      typeClass = "badge-savings";
+      sign = "+";
+    }
+
+    let amountText = sign + Number(op.amount).toLocaleString("ru-RU") + " " + op.currency;
+
+    if (op.currency !== "PLN") {
+      amountText += `<br><span style="color:#94a3b8;font-size:12px;">≈ ${money(converted.amount)} PLN</span>`;
+    }
+
+    return `
+      <tr>
+        <td>${op.date}</td>
+        <td class="${typeClass}">${op.type}</td>
+        <td>${op.category}</td>
+        <td>${op.name}</td>
+        <td>${amountText}</td>
+        <td>
+          <button onclick="deleteOperation(${op.id})" style="
+            background:#ef4444;
+            color:white;
+            border:none;
+            border-radius:8px;
+            padding:6px 10px;
+            cursor:pointer;
+            font-weight:700;
+          ">
+            Удалить
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function buildExpenseCategories() {
+  const result = {};
+
+  getExpenseOperations().forEach(function(op) {
+    if (!result[op.category]) result[op.category] = 0;
+    result[op.category] += Number(op.amount);
+  });
+
+  const colors = [
+    "#3b82f6",
+    "#22c55e",
+    "#f59e0b",
+    "#a855f7",
+    "#06b6d4",
+    "#ef4444",
+    "#14b8a6",
+    "#f97316"
+  ];
+
+  return Object.keys(result)
+    .map(function(category) {
+      return {
+        label: category,
+        value: result[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    })
+    .slice(0, 8)
+    .map(function(item, index) {
+      return {
+        label: item.label,
+        value: item.value,
+        color: colors[index % colors.length]
+      };
+    });
+}
+
+function renderTopExpenses() {
+  const panels = document.querySelectorAll(".panel");
+  let topPanel = null;
+
+  panels.forEach(function(panel) {
+    if (panel.textContent.includes("TOP расходов")) {
+      topPanel = panel;
+    }
+  });
+
+  if (!topPanel) return;
+
+  const title = topPanel.querySelector(".panel-title");
+  topPanel.innerHTML = "";
+  topPanel.appendChild(title);
+
+  const expenseData = buildExpenseCategories().slice(0, 5);
+
+  if (expenseData.length === 0) {
+    const row = document.createElement("div");
+    row.className = "list-row";
+    row.innerHTML = `<span>Нет расходов</span><span>0 PLN</span>`;
+    topPanel.appendChild(row);
+    return;
+  }
+
+  expenseData.forEach(function(item) {
+    const row = document.createElement("div");
+    row.className = "list-row";
+
+    row.innerHTML = `
+      <span>${item.label}</span>
+      <span>${money(item.value)} PLN</span>
+    `;
+
+    topPanel.appendChild(row);
+  });
+}
+
+function renderIncomeSourcesLive() {
+  const incomeByCategory = {};
+
+  getIncomeOperations().forEach(function(op) {
+    if (!incomeByCategory[op.category]) incomeByCategory[op.category] = 0;
+    incomeByCategory[op.category] += Number(op.amount);
+  });
+
+  const incomeData = Object.keys(incomeByCategory)
+    .map(function(category) {
+      return {
+        label: category,
+        value: incomeByCategory[category]
+      };
+    })
+    .sort(function(a, b) {
+      return b.value - a.value;
+    });
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Доходы по источникам")) {
+      panel.innerHTML = `<div class="panel-title">💵 Доходы по источникам</div>`;
+
+      if (incomeData.length === 0) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `<span>Нет доходов</span><span>0 PLN</span>`;
+        panel.appendChild(row);
+        return;
+      }
+
+      incomeData.forEach(function(item) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+
+        row.innerHTML = `
+          <span>${item.label}</span>
+          <span>${money(item.value)} PLN</span>
+        `;
+
+        panel.appendChild(row);
+      });
+    }
+  });
+}
+
+function updateCustomGoalLive() {
+  const goalAmount = getGoalAmount();
+  const totalSavings = getTotalSavings();
+
+  const goalPercent = Math.max(0, Math.min(100, Math.round((totalSavings / goalAmount) * 100)));
+  const remaining = Math.max(0, goalAmount - totalSavings);
+
+  const kpiGoal = document.getElementById("kpiGoal");
+
+  if (kpiGoal) {
+    kpiGoal.textContent = goalPercent + "%";
+  }
+
+  const panels = document.querySelectorAll(".panel");
+
+  panels.forEach(function(panel) {
+    const title = panel.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Финансовая цель")) {
+      panel.innerHTML = `
+        <div class="panel-title">🎯 Финансовая цель</div>
+
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:18px;">
+          <input
+            id="goalAmountInputLive"
+            type="number"
+            value="${goalAmount}"
+            placeholder="Введите цель"
+            style="
+              width:100%;
+              padding:13px 14px;
+              border-radius:12px;
+              border:1px solid rgba(255,255,255,0.08);
+              background:#0f172a;
+              color:white;
+              outline:none;
+              font-weight:700;
+            "
+          >
+
+          <button
+            onclick="saveGoalAmountLive()"
+            style="
+              padding:13px 18px;
+              border:none;
+              border-radius:12px;
+              background:#3b82f6;
+              color:white;
+              font-weight:900;
+              cursor:pointer;
+            "
+          >
+            Сохранить
+          </button>
+        </div>
+
+        <div class="big-number">${money(goalAmount)} PLN</div>
+
+        <div class="progress">
+          <div class="progress-fill" style="width:${goalPercent}%"></div>
+        </div>
+
+        <div style="margin-top:16px;">Накоплено: ${money(totalSavings)} PLN</div>
+        <div style="margin-top:8px;color:#94a3b8;">Осталось: ${money(remaining)} PLN</div>
+        <div style="margin-top:8px;color:#94a3b8;">Прогресс: ${goalPercent}%</div>
+      `;
+    }
+  });
+}
+
+function saveGoalAmountLive() {
+  const input = document.getElementById("goalAmountInputLive");
+  if (!input) return;
+
+  const value = Number(input.value);
+
+  if (!value || value <= 0) {
+    alert("Введи цель больше 0");
+    return;
+  }
+
+  localStorage.setItem("financeGoalAmount", String(value));
+  renderAll();
+}
+
+function updateForecast() {
+  const totalBalance = getTotalBalance();
+  const data = buildMonthlyData();
+
+  const flows = data.income.map(function(value, index) {
+    return value - data.expense[index];
+  });
+
+  const active = flows.filter(function(value) {
+    return value !== 0;
+  });
+
+  let average = 0;
+
+  if (active.length > 0) {
+    average = Math.round(active.reduce(function(sum, value) {
+      return sum + value;
+    }, 0) / active.length);
+  }
+
+  const forecast = totalBalance + average;
+  const cards = document.querySelectorAll(".mini-card");
+
+  cards.forEach(function(card) {
+    const title = card.querySelector(".panel-title");
+
+    if (title && title.textContent.includes("Прогноз баланса")) {
+      card.innerHTML = `
+        <div class="panel-title">🔮 Прогноз баланса</div>
+        <div class="forecast-number">${money(forecast)} PLN</div>
+        <div class="forecast-text">
+          Если текущий темп сохранится, через 1 месяц общий баланс может быть примерно:
+          <br><br>
+          <b>${money(forecast)} PLN</b>
+          <br><br>
+          Средний чистый поток:
+          <b>${average >= 0 ? "+" : ""}${money(average)} PLN</b>
+        </div>
+      `;
+    }
+  });
+}
+
+function getSelectedMonthKey() {
+  const mode = getPeriodMode();
+
+  if (mode === "month") {
+    return localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+  }
+
+  if (mode === "day") {
+    const day = localStorage.getItem("financePeriodDay") || getTodayISO();
+    return day.slice(0, 7);
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    return start.slice(0, 7);
+  }
+
+  return getCurrentMonthISO();
+}
+
+function getSelectedMonthDate() {
+  const key = getSelectedMonthKey();
+  const parts = key.split("-");
+
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+}
+
+function getDayBreakdown(dateKey) {
+  const dayOps = operations
+    .filter(function(op) {
+      return op.date === dateKey;
+    })
+    .map(function(op) {
+      return convertToPLN(op);
+    });
+
+  const income = dayOps
+    .filter(function(op) {
+      return op.type === "Доход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const expense = dayOps
+    .filter(function(op) {
+      return op.type === "Расход";
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  const savings = dayOps
+    .filter(function(op) {
+      return isSavingsOperation(op);
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount);
+    }, 0);
+
+  return {
+    income: income,
+    expense: expense,
+    savings: savings
+  };
+}
+
+function renderExpenseCalendarLive() {
+  const selectedDate = getSelectedMonthDate();
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const calendarGrids = document.querySelectorAll(".calendar-grid");
+
+  calendarGrids.forEach(function(grid) {
+    grid.innerHTML = "";
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey =
+        year +
+        "-" +
+        String(month + 1).padStart(2, "0") +
+        "-" +
+        String(day).padStart(2, "0");
+
+      const breakdown = getDayBreakdown(dateKey);
+      const amount = breakdown.expense;
+
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+
+      if (amount > 0 && amount <= 300) cell.classList.add("day-low");
+      if (amount > 300 && amount <= 1000) cell.classList.add("day-mid");
+      if (amount > 1000) cell.classList.add("day-high");
+
+      cell.innerHTML = `
+        <span style="
+          font-size:10px;
+          color:white;
+          opacity:.85;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          height:100%;
+          width:100%;
+        ">
+          ${day}
+        </span>
+      `;
+
+      cell.addEventListener("mouseenter", function(event) {
+        showTooltip(
+          `<b>${dateKey}</b><br>
+          Доходы: <span style="color:#22c55e">${money(breakdown.income)} PLN</span><br>
+          Расходы: <span style="color:#ef4444">${money(breakdown.expense)} PLN</span><br>
+          Накопления: <span style="color:#a855f7">${money(breakdown.savings)} PLN</span>`,
+          event.clientX,
+          event.clientY
+        );
+      });
+
+      cell.addEventListener("mousemove", function(event) {
+        showTooltip(
+          `<b>${dateKey}</b><br>
+          Доходы: <span style="color:#22c55e">${money(breakdown.income)} PLN</span><br>
+          Расходы: <span style="color:#ef4444">${money(breakdown.expense)} PLN</span><br>
+          Накопления: <span style="color:#a855f7">${money(breakdown.savings)} PLN</span>`,
+          event.clientX,
+          event.clientY
+        );
+      });
+
+      cell.addEventListener("mouseleave", hideTooltip);
+
+      grid.appendChild(cell);
+    }
+  });
+}
+
+function buildMonthlyData() {
+  const mode = getPeriodMode();
+
+  const convertedAll = operations.map(function(op) {
+    return convertToPLN(op);
+  });
+
+  function isIncomeChart(op) {
+    return op.type === "Доход";
+  }
+
+  function isExpenseChart(op) {
+    return op.type === "Расход";
+  }
+
+  if (mode === "day") {
+    const selectedDay = localStorage.getItem("financePeriodDay") || getTodayISO();
+
+    const dayOps = convertedAll.filter(function(op) {
+      return op.date === selectedDay;
+    });
+
+    return {
+      labels: [selectedDay],
+      income: [
+        dayOps
+          .filter(isIncomeChart)
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      ],
+      expense: [
+        dayOps
+          .filter(isExpenseChart)
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      ]
+    };
+  }
+
+  if (mode === "year") {
+    const selectedYear = localStorage.getItem("financePeriodYear") || getCurrentYearISO();
+
+    const labels = [
+      "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+      "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"
+    ];
+
+    const income = [];
+    const expense = [];
+
+    for (let i = 1; i <= 12; i++) {
+      const key = selectedYear + "-" + String(i).padStart(2, "0");
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return isIncomeChart(op) && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return isExpenseChart(op) && op.date && op.date.slice(0, 7) === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "month") {
+    const selectedMonth = localStorage.getItem("financePeriodMonth") || getCurrentMonthISO();
+    const parts = selectedMonth.split("-");
+    const year = Number(parts[0]);
+    const monthIndex = Number(parts[1]) - 1;
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+    const labels = [];
+    const income = [];
+    const expense = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = selectedMonth + "-" + String(day).padStart(2, "0");
+
+      labels.push(String(day));
+
+      income.push(
+        convertedAll
+          .filter(function(op) {
+            return isIncomeChart(op) && op.date === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+
+      expense.push(
+        convertedAll
+          .filter(function(op) {
+            return isExpenseChart(op) && op.date === key;
+          })
+          .reduce(function(sum, op) {
+            return sum + Number(op.amount);
+          }, 0)
+      );
+    }
+
+    return {
+      labels: labels,
+      income: income,
+      expense: expense
+    };
+  }
+
+  if (mode === "custom") {
+    const start = localStorage.getItem("financePeriodStart") || getTodayISO();
+    const end = localStorage.getItem("financePeriodEnd") || getTodayISO();
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 0 && diffDays <= 31) {
+      const labels = [];
+      const income = [];
+      const expense = [];
+
+      for (let i = 0; i <= diffDays; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+
+        const key =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0");
+
+        labels.push(key);
+
+        income.push(
+          convertedAll
+            .filter(function(op) {
+              return isIncomeChart(op) && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+
+        expense.push(
+          convertedAll
+            .filter(function(op) {
+              return isExpenseChart(op) && op.date === key;
+            })
+            .reduce(function(sum, op) {
+              return sum + Number(op.amount);
+            }, 0)
+        );
+      }
+
+      return {
+        labels: labels,
+        income: income,
+        expense: expense
+      };
+    }
+  }
+
+  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+
+  return {
+    labels: labels,
+    income: labels.map(function() { return 0; }),
+    expense: labels.map(function() { return 0; })
+  };
+}
+
+function prepareCanvas(id, fixedHeight) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+
+  const parent = canvas.parentElement;
+  const width = parent.clientWidth || 800;
+  const height = fixedHeight || parent.clientHeight || 320;
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = "100%";
+  canvas.style.height = height + "px";
+  canvas.style.display = "block";
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+
+  return {
+    canvas: canvas,
+    ctx: ctx,
+    width: width,
+    height: height
+  };
+}
+
+function drawIncomeChart() {
+  const chart = prepareCanvas("incomeChart", 320);
+  if (!chart) return;
+
+  const canvas = chart.canvas;
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
+  const padding = 45;
+
+  const data = buildMonthlyData();
+  const labels = data.labels;
+  const income = data.income;
+  const expense = data.expense;
+
+  incomeChartPoints = [];
+
+  const maxValue = Math.max(
+    1000,
+    Math.max.apply(null, income),
+    Math.max.apply(null, expense)
+  ) * 1.15;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 5; i++) {
+    const y = padding + ((height - padding * 2) / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+  }
+
+  function getX(index) {
+    if (labels.length === 1) return width / 2;
+    return padding + ((width - padding * 2) / Math.max(1, labels.length - 1)) * index;
+  }
+
+  function getY(value) {
+    return height - padding - (value / maxValue) * (height - padding * 2);
+  }
+
+  function drawLine(values, color, fillColor, typeName) {
+    ctx.beginPath();
+
+    values.forEach(function(value, index) {
+      const x = getX(index);
+      const y = getY(value);
+
+      incomeChartPoints.push({
+        x: x,
+        y: y,
+        label: labels[index],
+        value: value,
+        type: typeName,
+        color: color
+      });
+
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.lineTo(getX(values.length - 1), height - padding);
+    ctx.lineTo(getX(0), height - padding);
+    ctx.closePath();
+
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    values.forEach(function(value, index) {
+      const x = getX(index);
+      const y = getY(value);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(income, "#22c55e", "rgba(34,197,94,0.14)", "Доходы");
+  drawLine(expense, "#ef4444", "rgba(239,68,68,0.14)", "Расходы");
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "12px Segoe UI";
+  ctx.textAlign = "center";
+
+  const step = Math.max(1, Math.ceil(labels.length / 12));
+
+  labels.forEach(function(label, index) {
+    if (index % step === 0) {
+      ctx.fillText(label, getX(index), height - 15);
+    }
+  });
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#22c55e";
+  ctx.font = "14px Segoe UI";
+  ctx.fillText("Доходы", padding, 24);
+
+  ctx.fillStyle = "#ef4444";
+  ctx.fillText("Расходы", padding + 90, 24);
+
+  canvas.onmousemove = function(event) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+
+    incomeChartPoints.forEach(function(point) {
+      const distance = Math.sqrt(
+        Math.pow(point.x - mouseX, 2) + Math.pow(point.y - mouseY, 2)
+      );
+
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = point;
+      }
+    });
+
+    if (nearest && nearestDistance < 28) {
+      showTooltip(
+        `<b>${nearest.label}</b><br>${nearest.type}: <span style="color:${nearest.color}">${money(nearest.value)} PLN</span>`,
+        event.clientX,
+        event.clientY
+      );
+    } else {
+      hideTooltip();
+    }
+  };
+
+  canvas.onmouseleave = hideTooltip;
+}
+
+function drawExpenseChart() {
+  const chart = prepareCanvas("expenseChart", 320);
+  if (!chart) return;
+
+  const canvas = chart.canvas;
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
+
+  expenseChartSegments = [];
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  const data = buildExpenseCategories();
+
+  const total = data.reduce(function(sum, item) {
+    return sum + item.value;
+  }, 0);
+
+  if (total <= 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 22px Segoe UI";
+    ctx.textAlign = "center";
+    ctx.fillText("0 PLN", width / 2, 145);
+
+    ctx.font = "13px Segoe UI";
+    ctx.fillText("Нет расходов", width / 2, 170);
+    return;
+  }
+
+  const centerX = width / 2;
+  const centerY = 140;
+  const radius = 95;
+  const innerRadius = 55;
+
+  let startAngle = -Math.PI / 2;
+
+  data.forEach(function(item) {
+    const slice = (item.value / total) * Math.PI * 2;
+    const endAngle = startAngle + slice;
+
+    expenseChartSegments.push({
+      startAngle: startAngle,
+      endAngle: endAngle,
+      centerX: centerX,
+      centerY: centerY,
+      radius: radius,
+      innerRadius: innerRadius,
+      label: item.label,
+      value: item.value,
+      color: item.color
+    });
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+    ctx.closePath();
+
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    startAngle = endAngle;
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.fillText(money(total), centerX, centerY - 4);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "13px Segoe UI";
+  ctx.fillText("PLN расходы", centerX, centerY + 20);
+
+  ctx.textAlign = "left";
+  ctx.font = "13px Segoe UI";
+
+  const legendY = 255;
+
+  data.slice(0, 4).forEach(function(item, index) {
+    const x = 30 + (index % 2) * 150;
+    const y = legendY + Math.floor(index / 2) * 28;
+
+    ctx.fillStyle = item.color;
+    ctx.fillRect(x, y, 12, 12);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(item.label, x + 20, y + 11);
+  });
+
+  canvas.onclick = function(event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const dx = x - centerX;
+    const dy = y - centerY;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    let angle = Math.atan2(dy, dx);
+
+    if (angle < -Math.PI / 2) {
+      angle += Math.PI * 2;
+    }
+
+    expenseChartSegments.forEach(function(segment) {
+      if (
+        distance >= segment.innerRadius &&
+        distance <= segment.radius &&
+        angle >= segment.startAngle &&
+        angle <= segment.endAngle
+      ) {
+        showTooltip(
+          `<b>${segment.label}</b><br>Расход: <span style="color:${segment.color}">${money(segment.value)} PLN</span>`,
+          event.clientX,
+          event.clientY
+        );
+
+        setTimeout(hideTooltip, 2500);
+      }
+    });
+  };
+}
+
+function drawCashFlowChart() {
+  const chart = prepareCanvas("cashFlowChart", 300);
+  if (!chart) return;
+
+  const ctx = chart.ctx;
+  const width = chart.width;
+  const height = chart.height;
+  const padding = 45;
+
+  const data = buildMonthlyData();
+  const labels = data.labels;
+  const inflow = data.income;
+  const outflow = data.expense;
+
+  const maxValue = Math.max(
+    1000,
+    Math.max.apply(null, inflow),
+    Math.max.apply(null, outflow)
+  ) * 1.15;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 5; i++) {
+    const y = padding + ((height - padding * 2) / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+  }
+
+  const groupGap = (width - padding * 2) / Math.max(1, labels.length);
+  const barWidth = Math.max(6, Math.min(24, groupGap / 4));
+
+  labels.forEach(function(label, index) {
+    const baseX = padding + groupGap * index + groupGap / 2;
+
+    const incomeHeight = (inflow[index] / maxValue) * (height - padding * 2);
+    const expenseHeight = (outflow[index] / maxValue) * (height - padding * 2);
+
+    const incomeY = height - padding - incomeHeight;
+    const expenseY = height - padding - expenseHeight;
+
+    ctx.fillStyle = "#22c55e";
+    roundRect(ctx, baseX - barWidth - 3, incomeY, barWidth, incomeHeight, 6);
+    ctx.fill();
+
+    ctx.fillStyle = "#ef4444";
+    roundRect(ctx, baseX + 3, expenseY, barWidth, expenseHeight, 6);
+    ctx.fill();
+
+    if (labels.length <= 12 || index % Math.ceil(labels.length / 12) === 0) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "12px Segoe UI";
+      ctx.textAlign = "center";
+      ctx.fillText(label, baseX, height - 14);
+    }
+  });
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#22c55e";
+  ctx.font = "14px Segoe UI";
+  ctx.fillText("Приток", padding, 22);
+
+  ctx.fillStyle = "#ef4444";
+  ctx.fillText("Отток", padding + 85, 22);
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+/* =========================
+   RENDER ALL
+========================= */
+
+function renderAll() {
+  addSavingsTypeAndCategory();
+  ensureTotalBalanceCardExists();
+  initPeriodFilter();
+  renderCurrencyRatesPanel();
+  initJournalFilters();
+
+  updateDashboardKPI();
+  renderOperations();
+  renderTopExpenses();
+  renderIncomeSourcesLive();
+  updateCustomGoalLive();
+  updateForecast();
+  renderExpenseCalendarLive();
+
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+}
+
+window.addEventListener("load", function() {
+  renderAll();
+});
+
+window.addEventListener("resize", function() {
+  drawIncomeChart();
+  drawExpenseChart();
+  drawCashFlowChart();
+});
+
+</script>
+
+</body>
+</html>
