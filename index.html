@@ -618,6 +618,8 @@ canvas {
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
@@ -2431,6 +2433,19 @@ window.addEventListener("resize", function() {
   drawCashFlowChart();
 });
 
+</script>
+
+<script>
+
+const SUPABASE_URL = "https://ukqzbtqjnnajycvxgffd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_e9VPcI7A6mv-KBixuCYVnA_TB0SpyNp";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+/* SUPABASE AUTH CODE */
 </script>
 
 </body>
