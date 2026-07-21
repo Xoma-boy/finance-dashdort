@@ -2454,9 +2454,32 @@ function renderSupabaseAuthPanel() {
 
       <div id="authLoggedOutBox">
         <div class="form-grid">
-          <input id="authEmail" class="form-input" type="email" placeholder="Email">
-          <input id="authPassword" class="form-input" type="password" placeholder="Пароль">
-        </div>
+          <input id="authEmail" class="form-input" type="email" placeholder="Email">    
+          <div style="position:relative;">
+            <input
+              id="authPassword"
+              class="form-input"
+              type="password"
+              placeholder="Пароль"
+              style="padding-right:50px;"
+            >
+          
+            <span
+              id="passwordEye"
+              onclick="togglePassword()"
+              style="
+                position:absolute;
+                right:15px;
+                top:50%;
+                transform:translateY(-50%);
+                cursor:pointer;
+                user-select:none;
+                font-size:18px;
+              "
+            >
+              👁
+            </span>
+          </div>
 
         <div class="form-actions">
           <button class="form-btn form-btn-green" onclick="signInWithEmail()">Войти</button>
@@ -2615,6 +2638,21 @@ window.addEventListener("load", async function() {
     updateAuthUI();
   });
 });
+
+function togglePassword() {
+  const input = document.getElementById("authPassword");
+  const eye = document.getElementById("passwordEye");
+
+  if (!input) return;
+
+  if (input.type === "password") {
+    input.type = "text";
+    eye.textContent = "🙈";
+  } else {
+    input.type = "password";
+    eye.textContent = "👁";
+  }
+}
 </script>
 
 <script>
