@@ -2579,7 +2579,56 @@ async function signUpWithEmail() {
     return;
   }
 
-  alert("Регистрация создана. Если Supabase попрос
+  alert("Регистрация создана. Если Supabase попросит подтверждение email — проверь почту.");
+
+  await refreshSupabaseUser();
+}
+
+async function signInWithEmail() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  if (!email || !password) {
+    alert("Введи email и пароль");
+    return;
+  }
+
+  const result = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (result.error) {
+    alert("Ошибка входа: " + result.error.message);
+    return;
+  }
+
+  await refreshSupabaseUser();
+}
+
+async function signOutSupabase() {
+  await supabaseClient.auth.signOut();
+
+  currentSupabaseUser = null;
+  updateAuthUI();
+}
+
+window.addEventListener("load", async function() {
+  renderSupabaseAuthPanel();
+
+  await refreshSupabaseUser();
+
+  supabaseClient.auth.onAuthStateChange(async function(event, session) {
+    if (session && session.user) {
+      currentSupabaseUser = session.user;
+    } else {
+      currentSupabaseUser = null;
+    }
+
+    updateAuthUI();
+  });
+});
+</script>
 
 </body>
 </html>
