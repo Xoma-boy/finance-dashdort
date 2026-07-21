@@ -1260,6 +1260,8 @@ function addOperation() {
   document.getElementById("opAmount").value = "";
 
   renderAll();
+  
+  saveOperationToCloud(operation);
 }
 
 function deleteOperation(id) {
@@ -2540,6 +2542,10 @@ async function refreshSupabaseUser() {
   }
 
   updateAuthUI();
+if (currentSupabaseUser) {
+  await loadOperationsFromCloud();
+}
+
 }
 
 function updateAuthUI() {
@@ -2666,6 +2672,41 @@ const supabaseClient = window.supabase.createClient(
 );
 
 /* SUPABASE AUTH CODE */
+
+async function loadOperationsFromCloud() {
+
+  if (!currentSupabaseUser) return;
+
+  const result = await supabaseClient
+    .from("operations")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (result.error) {
+    console.error(result.error);
+    return;
+  }
+
+  operations = result.data.map(function(op) {
+    return {
+      id: op.id,
+      date: op.date,
+      type: op.type,
+      category: op.category,
+      name: op.name,
+      amount: Number(op.amount),
+      currency: op.currency
+    };
+  });
+
+  localStorage.setItem(
+    "financeOperations",
+    JSON.stringify(operations)
+  );
+
+  renderAll();
+}
+
 </script>
 
 </body>
