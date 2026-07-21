@@ -2448,5 +2448,138 @@ const supabaseClient = window.supabase.createClient(
 /* SUPABASE AUTH CODE */
 </script>
 
+<script>
+let currentSupabaseUser = null;
+
+function renderSupabaseAuthPanel() {
+  if (document.getElementById("supabaseAuthPanel")) return;
+
+  const main = document.querySelector(".main");
+  if (!main) return;
+
+  const panel = document.createElement("section");
+  panel.id = "supabaseAuthPanel";
+  panel.className = "operations-grid";
+
+  panel.innerHTML = `
+    <div class="form-box">
+      <div class="panel-title">👤 Аккаунт</div>
+
+      <div id="authLoggedOutBox">
+        <div class="form-grid">
+          <input id="authEmail" class="form-input" type="email" placeholder="Email">
+          <input id="authPassword" class="form-input" type="password" placeholder="Пароль">
+        </div>
+
+        <div class="form-actions">
+          <button class="form-btn form-btn-green" onclick="signInWithEmail()">Войти</button>
+          <button class="form-btn" onclick="signUpWithEmail()">Регистрация</button>
+        </div>
+
+        <div style="color:#94a3b8;margin-top:12px;font-size:13px;line-height:1.5;">
+          После входа история операций сможет храниться в аккаунте.
+        </div>
+      </div>
+
+      <div id="authLoggedInBox" style="display:none;">
+        <div style="color:#94a3b8;margin-bottom:12px;">
+          Вход выполнен:
+        </div>
+
+        <div id="authUserEmail" style="font-weight:900;margin-bottom:14px;"></div>
+
+        <div class="form-actions">
+          <button class="form-btn form-btn-danger" onclick="signOutSupabase()">Выйти</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-box">
+      <div class="panel-title">☁️ Облачный аккаунт</div>
+
+      <div id="cloudStatusBox" style="color:#94a3b8;line-height:1.7;">
+        Пока ты не вошёл в аккаунт, данные хранятся только в браузере.
+      </div>
+    </div>
+  `;
+
+  const topbar = document.querySelector(".topbar");
+
+  if (topbar && topbar.parentElement) {
+    topbar.parentElement.insertBefore(panel, topbar.nextSibling);
+  } else {
+    main.prepend(panel);
+  }
+}
+
+function setCloudStatus(text, color) {
+  const box = document.getElementById("cloudStatusBox");
+  if (!box) return;
+
+  box.textContent = text;
+  box.style.color = color || "#94a3b8";
+}
+
+async function refreshSupabaseUser() {
+  const result = await supabaseClient.auth.getUser();
+
+  if (result.data && result.data.user) {
+    currentSupabaseUser = result.data.user;
+  } else {
+    currentSupabaseUser = null;
+  }
+
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  const loggedOutBox = document.getElementById("authLoggedOutBox");
+  const loggedInBox = document.getElementById("authLoggedInBox");
+  const emailBox = document.getElementById("authUserEmail");
+
+  if (!loggedOutBox || !loggedInBox || !emailBox) return;
+
+  if (currentSupabaseUser) {
+    loggedOutBox.style.display = "none";
+    loggedInBox.style.display = "block";
+    emailBox.textContent = currentSupabaseUser.email || "Пользователь";
+
+    setCloudStatus(
+      "Аккаунт подключён. Следующий шаг — сохранять операции в облако.",
+      "#22c55e"
+    );
+  } else {
+    loggedOutBox.style.display = "block";
+    loggedInBox.style.display = "none";
+    emailBox.textContent = "";
+
+    setCloudStatus(
+      "Пока ты не вошёл в аккаунт, данные хранятся только в браузере.",
+      "#94a3b8"
+    );
+  }
+}
+
+async function signUpWithEmail() {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  if (!email || !password) {
+    alert("Введи email и пароль");
+    return;
+  }
+
+  const result = await supabaseClient.auth.signUp({
+    email: email,
+    password: password
+  });
+
+  if (result.error) {
+    alert("Ошибка регистрации: " + result.error.message);
+    return;
+  }
+
+  alert("Регистрация создана. Если Supabase попрос
+
 </body>
 </html>
