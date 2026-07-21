@@ -2707,6 +2707,30 @@ async function loadOperationsFromCloud() {
   renderAll();
 }
 
+async function saveOperationToCloud(operation) {
+
+  if (!currentSupabaseUser) return;
+
+  const result = await supabaseClient
+    .from("operations")
+    .insert({
+      user_id: currentSupabaseUser.id,
+      date: operation.date,
+      type: operation.type,
+      category: operation.category,
+      name: operation.name,
+      amount: Number(operation.amount),
+      currency: operation.currency
+    });
+
+  if (result.error) {
+    console.error("Cloud save error:", result.error);
+    return;
+  }
+
+  console.log("Saved to Supabase");
+}
+
 </script>
 
 </body>
