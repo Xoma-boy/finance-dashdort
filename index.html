@@ -2980,16 +2980,23 @@ async function saveOperationToCloud(operation) {
 </script>
 
 <style>
+
 body::before {
   content: "";
   position: fixed;
   inset: 0;
 
   background:
-    radial-gradient(circle at 20% 20%, rgba(59,130,246,.2), transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(168,85,247,.2), transparent 40%);
+    radial-gradient(circle at 20% 20%,
+      rgba(59,130,246,.45),
+      transparent 35%),
 
-  animation: moveBg 12s linear infinite;
+    radial-gradient(circle at 80% 80%,
+      rgba(168,85,247,.45),
+      transparent 35%);
+
+  animation: moveBg 12s ease-in-out infinite;
+
   pointer-events: none;
   z-index: -1;
 }
