@@ -594,6 +594,33 @@ function animateNumber(el, value) {
   transform: translateY(-6px);
   box-shadow: 0 25px 45px rgba(0,0,0,.35);
 }
+
+.card:hover,
+.panel:hover,
+.mini-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 0 30px rgba(59,130,246,.25),
+    0 0 50px rgba(168,85,247,.15);
+}
+
+.menu-item {
+  transition: .25s ease;
+}
+
+.menu-item:hover {
+  transform: translateX(8px);
+  background:#243247;
+}
+
+.btn-primary {
+  box-shadow:
+    0 0 20px rgba(59,130,246,.45);
+}
+
+border:1px solid rgba(255,255,255,.12);
+backdrop-filter: blur(20px);
+
 </style>
 </head>
 
