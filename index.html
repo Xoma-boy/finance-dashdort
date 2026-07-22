@@ -885,6 +885,13 @@ function money(value) {
   return Math.round(Number(value) || 0).toLocaleString("ru-RU");
 }
 
+function animateNumber(el, value) {
+
+  el.textContent =
+    Math.round(value).toLocaleString("ru-RU");
+
+}
+
 function getGoalAmount() {
   return Number(localStorage.getItem("financeGoalAmount")) || 100000;
 }
