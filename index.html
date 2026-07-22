@@ -2621,6 +2621,206 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+let currentSupabaseUser = null;
+
+function setCloudStatus(text, color) {
+  console.log(text);
+
+  const el = document.getElementById("cloudStatus");
+  if (!el) return;
+
+  el.textContent = text;
+  el.style.color = color;
+}
+
+function renderSupabaseAuthPanel() {
+
+  if (document.getElementById("supabaseAuthPanel")) return;
+
+  const panel = document.createElement("section");
+
+  panel.id = "supabaseAuthPanel";
+  panel.className = "operations-grid";
+
+  panel.innerHTML = `
+    <div class="form-box">
+
+      <div class="panel-title">
+        ☁️ Аккаунт
+      </div>
+
+      <div id="loggedOutBox">
+
+        <input
+          id="authEmail"
+          class="form-input"
+          placeholder="Email"
+        >
+
+        <br><br>
+
+        <input
+          id="authPassword"
+          type="password"
+          class="form-input"
+          placeholder="Пароль"
+        >
+
+        <div class="form-actions">
+
+          <button
+            class="form-btn form-btn-green"
+            onclick="signUpWithEmail()">
+            Регистрация
+          </button>
+
+          <button
+            class="form-btn"
+            onclick="signInWithEmail()">
+            Войти
+          </button>
+
+        </div>
+
+      </div>
+
+      <div
+        id="loggedInBox"
+        style="display:none;"
+      >
+
+        <div id="authUserEmail"></div>
+
+        <div class="form-actions">
+
+          <button
+            class="form-btn form-btn-danger"
+            onclick="signOutSupabase()">
+            Выйти
+          </button>
+
+        </div>
+
+      </div>
+
+      <div
+        id="cloudStatus"
+        style="margin-top:15px;color:#94a3b8;">
+      </div>
+
+    </div>
+
+    <div class="history-box">
+      <div class="panel-title">
+        ☁️ Sync
+      </div>
+
+      <div style="color:#94a3b8;">
+        Данные синхронизируются через Supabase.
+      </div>
+    </div>
+  `;
+
+  document
+    .querySelector(".main")
+    .prepend(panel);
+}
+
+function updateAuthUI() {
+
+  const loggedOutBox =
+    document.getElementById("loggedOutBox");
+
+  const loggedInBox =
+    document.getElementById("loggedInBox");
+
+  const emailBox =
+    document.getElementById("authUserEmail");
+
+  if (!loggedOutBox || !loggedInBox) return;
+
+  if (currentSupabaseUser) {
+
+    loggedOutBox.style.display = "none";
+    loggedInBox.style.display = "block";
+
+    emailBox.textContent =
+      currentSupabaseUser.email;
+
+  } else {
+
+    loggedOutBox.style.display = "block";
+    loggedInBox.style.display = "none";
+
+  }
+}
+
+async function refreshSupabaseUser() {
+
+  const result =
+    await supabaseClient.auth.getUser();
+
+  currentSupabaseUser =
+    result.data.user;
+
+  updateAuthUI();
+
+  if (currentSupabaseUser) {
+    await loadOperationsFromCloud();
+  }
+}
+
+async function signUpWithEmail() {
+
+  const email =
+    document.getElementById("authEmail").value;
+
+  const password =
+    document.getElementById("authPassword").value;
+
+  const result =
+    await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+
+  if (result.error) {
+    alert(result.error.message);
+    return;
+  }
+
+  alert("Проверь почту");
+}
+
+async function signInWithEmail() {
+
+  const email =
+    document.getElementById("authEmail").value;
+
+  const password =
+    document.getElementById("authPassword").value;
+
+  const result =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (result.error) {
+    alert(result.error.message);
+    return;
+  }
+
+  await refreshSupabaseUser();
+}
+
+window.addEventListener("load", async () => {
+
+  renderSupabaseAuthPanel();
+
+  await refreshSupabaseUser();
+
+});
 
 /* SUPABASE AUTH CODE */
 
