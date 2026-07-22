@@ -1453,7 +1453,7 @@ function updateDashboardKPI() {
   const goalEl = document.getElementById("kpiGoal");
   const totalBalanceEl = document.getElementById("kpiTotalBalance");
 
-  if (incomeEl) animateNumber(incomeEl, totalIncome);
+  if (incomeEl) incomeEl.textContent = money(totalIncome);
   if (expenseEl) expenseEl.textContent = money(totalExpense);
   if (balanceEl) balanceEl.textContent = money(balance);
   if (savingsEl) savingsEl.textContent = money(totalSavings);
