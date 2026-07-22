@@ -2400,7 +2400,8 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
-
+  
+<script>
 /* =========================
    RENDER ALL
 ========================= */
@@ -2434,230 +2435,180 @@ window.addEventListener("resize", function() {
   drawExpenseChart();
   drawCashFlowChart();
 });
+</script>
 
 </script>
 
-<script>
-let currentSupabaseUser = null;
-
-function renderSupabaseAuthPanel() {
-  if (document.getElementById("supabaseAuthPanel")) return;
-
-  const main = document.querySelector(".main");
-  if (!main) return;
-
-  const panel = document.createElement("section");
-  panel.id = "supabaseAuthPanel";
-  panel.className = "operations-grid";
-
-  panel.innerHTML = `
-    <div class="form-box">
-      <div class="panel-title">👤 Аккаунт</div>
-
-      <div id="authLoggedOutBox">
-        <div class="form-grid">
-          <input id="authEmail" class="form-input" type="email" placeholder="Email">    
-          <div style="position:relative;">
-            <input
-              id="authPassword"
-              class="form-input"
-              type="password"
-              placeholder="Пароль"
-              style="padding-right:50px;"
-            >
-          
-            <span
-              id="passwordEye"
-              onclick="togglePassword()"
-              style="
-                position:absolute;
-                right:15px;
-                top:50%;
-                transform:translateY(-50%);
-                cursor:pointer;
-                user-select:none;
-                font-size:18px;
-              "
-            >
-              👁
-            </span>
-          </div>
-
-        <div class="form-actions">
-          <button class="form-btn form-btn-green" onclick="signInWithEmail()">Войти</button>
-          <button class="form-btn" onclick="signUpWithEmail()">Регистрация</button>
-        </div>
-
-        <div style="color:#94a3b8;margin-top:12px;font-size:13px;line-height:1.5;">
-          После входа история операций сможет храниться в аккаунте.
-        </div>
-      </div>
-
-      <div id="authLoggedInBox" style="display:none;">
-        <div style="color:#94a3b8;margin-bottom:12px;">
-          Вход выполнен:
-        </div>
-
-        <div id="authUserEmail" style="font-weight:900;margin-bottom:14px;"></div>
-
-        <div class="form-actions">
-          <button class="form-btn form-btn-danger" onclick="signOutSupabase()">Выйти</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="history-box">
-      <div class="panel-title">☁️ Облачный аккаунт</div>
-
-      <div id="cloudStatusBox" style="color:#94a3b8;line-height:1.7;">
-        Пока ты не вошёл в аккаунт, данные хранятся только в браузере.
-      </div>
-    </div>
-  `;
-
-  const topbar = document.querySelector(".topbar");
-
-  if (topbar && topbar.parentElement) {
-    topbar.parentElement.insertBefore(panel, topbar.nextSibling);
-  } else {
-    main.prepend(panel);
-  }
-}
-
-function setCloudStatus(text, color) {
-  const box = document.getElementById("cloudStatusBox");
-  if (!box) return;
-
-  box.textContent = text;
-  box.style.color = color || "#94a3b8";
-}
-
-async function refreshSupabaseUser() {
-  const result = await supabaseClient.auth.getUser();
-
-  if (result.data && result.data.user) {
-    currentSupabaseUser = result.data.user;
-  } else {
-    currentSupabaseUser = null;
-  }
-
-  updateAuthUI();
-if (currentSupabaseUser) {
-  await loadOperationsFromCloud();
-}
-
-}
-
-function updateAuthUI() {
-  const loggedOutBox = document.getElementById("authLoggedOutBox");
-  const loggedInBox = document.getElementById("authLoggedInBox");
-  const emailBox = document.getElementById("authUserEmail");
-
-  if (!loggedOutBox || !loggedInBox || !emailBox) return;
-
-  if (currentSupabaseUser) {
-    loggedOutBox.style.display = "none";
-    loggedInBox.style.display = "block";
-    emailBox.textContent = currentSupabaseUser.email || "Пользователь";
-
-    setCloudStatus(
-      "Аккаунт подключён. Следующий шаг — сохранять операции в облако.",
-      "#22c55e"
-    );
-  } else {
-    loggedOutBox.style.display = "block";
-    loggedInBox.style.display = "none";
-    emailBox.textContent = "";
-
-    setCloudStatus(
-      "Пока ты не вошёл в аккаунт, данные хранятся только в браузере.",
-      "#94a3b8"
-    );
-  }
-}
-
-async function signUpWithEmail() {
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value;
-
-  if (!email || !password) {
-    alert("Введи email и пароль");
-    return;
-  }
-
-  const result = await supabaseClient.auth.signUp({
-    email: email,
-    password: password
-  });
-
-  if (result.error) {
-    alert("Ошибка регистрации: " + result.error.message);
-    return;
-  }
-
-  alert("Регистрация создана. Если Supabase попросит подтверждение email — проверь почту.");
-
-  await refreshSupabaseUser();
-}
-
-async function signInWithEmail() {
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value;
-
-  if (!email || !password) {
-    alert("Введи email и пароль");
-    return;
-  }
-
-  const result = await supabaseClient.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
-
-  if (result.error) {
-    alert("Ошибка входа: " + result.error.message);
-    return;
-  }
-
-  await refreshSupabaseUser();
-}
+/* =========================
+   PROFILE / AUTH EXTRA
+========================= */
 
 async function signOutSupabase() {
+
   await supabaseClient.auth.signOut();
 
   currentSupabaseUser = null;
+
+  operations = [];
+
+  localStorage.removeItem("financeOperations");
+
   updateAuthUI();
+
+  location.reload();
 }
 
-window.addEventListener("load", async function() {
-  renderSupabaseAuthPanel();
+async function resetPassword() {
 
-  await refreshSupabaseUser();
+  const email =
+    document.getElementById("authEmail")?.value.trim();
 
-  supabaseClient.auth.onAuthStateChange(async function(event, session) {
-    if (session && session.user) {
-      currentSupabaseUser = session.user;
-    } else {
-      currentSupabaseUser = null;
+  if (!email) {
+    alert("Введите email");
+    return;
+  }
+
+  const result =
+    await supabaseClient.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo:
+          "https://xoma-boy.github.io/finance-dashdort/"
+      }
+    );
+
+  if (result.error) {
+    alert(result.error.message);
+    return;
+  }
+
+  alert("Письмо для смены пароля отправлено.");
+}
+
+async function deleteOperation(id) {
+
+  operations = operations.filter(function(op) {
+    return op.id !== id;
+  });
+
+  localStorage.setItem(
+    "financeOperations",
+    JSON.stringify(operations)
+  );
+
+  if (currentSupabaseUser) {
+
+    const result = await supabaseClient
+      .from("operations")
+      .delete()
+      .eq("id", id);
+
+    if (result.error) {
+      console.error(result.error);
     }
 
-    updateAuthUI();
-  });
-});
-
-function togglePassword() {
-  const input = document.getElementById("authPassword");
-  const eye = document.getElementById("passwordEye");
-
-  if (!input) return;
-
-  if (input.type === "password") {
-    input.type = "text";
-    eye.textContent = "🙈";
-  } else {
-    input.type = "password";
-    eye.textContent = "👁";
   }
+
+  renderAll();
+}
+
+async function clearCloudOperations() {
+
+  if (!currentSupabaseUser) return;
+
+  if (!confirm("Удалить все операции?")) return;
+
+  const result = await supabaseClient
+    .from("operations")
+    .delete()
+    .eq(
+      "user_id",
+      currentSupabaseUser.id
+    );
+
+  if (result.error) {
+    alert(result.error.message);
+    return;
+  }
+
+  operations = [];
+
+  localStorage.removeItem(
+    "financeOperations"
+  );
+
+  renderAll();
+}
+
+function updateProfileName() {
+
+  const emailBox =
+    document.getElementById("authUserEmail");
+
+  if (!emailBox || !currentSupabaseUser) return;
+
+  emailBox.innerHTML = `
+    <div style="font-size:18px;">
+      👋 ${currentSupabaseUser.email}
+    </div>
+  `;
+}
+
+async function loadGoalFromCloud() {
+
+  if (!currentSupabaseUser) return;
+
+  const result = await supabaseClient
+    .from("user_goals")
+    .select("*")
+    .eq("user_id", currentSupabaseUser.id)
+    .single();
+
+  if (result.error) return;
+
+  if (result.data) {
+
+    localStorage.setItem(
+      "financeGoalAmount",
+      String(result.data.goal_amount || 100000)
+    );
+
+  }
+
+  renderAll();
+}
+
+async function saveGoalToCloud() {
+
+  if (!currentSupabaseUser) return;
+
+  const goal =
+    Number(
+      localStorage.getItem(
+        "financeGoalAmount"
+      )
+    ) || 100000;
+
+  const result = await supabaseClient
+    .from("user_goals")
+    .upsert({
+      user_id: currentSupabaseUser.id,
+      goal_amount: goal
+    });
+
+  if (result.error) {
+    console.error(result.error);
+  }
+}
+
+function showEmptyAccountMessage() {
+
+  if (operations.length > 0) return;
+
+  setCloudStatus(
+    "📊 Пока нет операций. Добавьте первую запись.",
+    "#fbbf24"
+  );
 }
 </script>
 
