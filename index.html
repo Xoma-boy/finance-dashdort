@@ -629,7 +629,6 @@ backdrop-filter: blur(20px);
 #periodYear,
 #periodStart,
 #periodEnd {
-
   transition:
     transform .25s ease,
     box-shadow .25s ease,
@@ -639,11 +638,37 @@ backdrop-filter: blur(20px);
 .btn:hover,
 .form-btn:hover,
 #periodMode:hover,
-#periodMonth:hover
+#periodMonth:hover,
+#periodDay:hover,
+#periodYear:hover,
+#periodStart:hover,
+#periodEnd:hover {
+  transform: translateY(-3px);
 
-.form
+  box-shadow:
+    0 0 20px rgba(59,130,246,.35);
+}
 
-.card-value
+.card-value {
+  animation: glowPulse 3s infinite;
+}
+
+@keyframes glowPulse {
+
+  0% {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  50% {
+    text-shadow:
+      0 0 25px currentColor,
+      0 0 40px currentColor;
+  }
+
+  100% {
+    text-shadow: 0 0 10px currentColor;
+  }
+}
 </style>
 </head>
 
