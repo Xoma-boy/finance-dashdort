@@ -2977,9 +2977,9 @@ async function saveOperationToCloud(operation) {
   console.log("Saved to Supabase");
 }
 
-</script>
-
-<style>
+/* =========================
+   MODERN FINTECH UI
+========================= */
 
 body::before {
   content: "";
@@ -2987,13 +2987,16 @@ body::before {
   inset: 0;
 
   background:
-    radial-gradient(circle at 20% 20%,
+    radial-gradient(
+      circle at 20% 20%,
       rgba(59,130,246,.45),
-      transparent 35%),
-
-    radial-gradient(circle at 80% 80%,
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
       rgba(168,85,247,.45),
-      transparent 35%);
+      transparent 35%
+    );
 
   animation: moveBg 12s ease-in-out infinite;
 
@@ -3002,6 +3005,7 @@ body::before {
 }
 
 @keyframes moveBg {
+
   0% {
     transform: translate(0,0);
   }
@@ -3013,8 +3017,122 @@ body::before {
   100% {
     transform: translate(0,0);
   }
+
 }
-</style>
+
+.card,
+.panel,
+.mini-card,
+.form-box,
+.history-box {
+
+  background: rgba(30,41,59,.75);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  border: 1px solid rgba(255,255,255,.08);
+
+  box-shadow:
+    0 15px 35px rgba(0,0,0,.25);
+
+  transition:
+    transform .3s ease,
+    box-shadow .3s ease;
+
+  animation: fadeUp .6s ease;
+}
+
+.card:hover,
+.panel:hover,
+.mini-card:hover,
+.form-box:hover,
+.history-box:hover {
+
+  transform: translateY(-8px);
+
+  box-shadow:
+    0 20px 40px rgba(59,130,246,.15),
+    0 15px 30px rgba(168,85,247,.15);
+}
+
+@keyframes fadeUp {
+
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+.btn,
+.form-btn {
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.btn:hover,
+.form-btn:hover {
+
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 10px 25px rgba(59,130,246,.3);
+}
+
+.operation-table tr {
+
+  animation: slideIn .4s ease;
+}
+
+@keyframes slideIn {
+
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+}
+
+.card-value {
+
+  text-shadow:
+    0 0 15px rgba(255,255,255,.15);
+}
+
+.green {
+  text-shadow: 0 0 20px rgba(34,197,94,.5);
+}
+
+.red {
+  text-shadow: 0 0 20px rgba(239,68,68,.5);
+}
+
+.blue {
+  text-shadow: 0 0 20px rgba(59,130,246,.5);
+}
+
+.yellow {
+  text-shadow: 0 0 20px rgba(251,191,36,.5);
+}
+
+.purple {
+  text-shadow: 0 0 20px rgba(168,85,247,.5);
+}
+
+</script>
 
 </body>
 </html>
