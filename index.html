@@ -621,6 +621,78 @@ canvas {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+.card,
+.panel,
+.mini-card,
+.form-box,
+.history-box {
+  animation: fadeUp .6s ease forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card,
+.panel,
+.mini-card {
+  transition: .3s ease;
+}
+
+function animateNumber(el, value) {
+
+  let start = 0;
+
+  const duration = 1000;
+
+  const step = value / (duration / 16);
+
+  const timer = setInterval(() => {
+
+    start += step;
+
+    if (start >= value) {
+      start = value;
+      clearInterval(timer);
+    }
+
+    el.textContent =
+      Math.round(start).toLocaleString("ru-RU");
+
+  }, 16);
+}
+
+.operation-table tr {
+  animation: slideIn .35s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.card:hover,
+.panel:hover,
+.mini-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 45px rgba(0,0,0,.35);
+}
+
 let operations = JSON.parse(localStorage.getItem("financeOperations") || "[]");
 
 let incomeChartPoints = [];
@@ -1191,7 +1263,7 @@ function updateDashboardKPI() {
   const goalEl = document.getElementById("kpiGoal");
   const totalBalanceEl = document.getElementById("kpiTotalBalance");
 
-  if (incomeEl) incomeEl.textContent = money(totalIncome);
+  if (incomeEl) animateNumber(incomeEl, totalIncome);
   if (expenseEl) expenseEl.textContent = money(totalExpense);
   if (balanceEl) balanceEl.textContent = money(balance);
   if (savingsEl) savingsEl.textContent = money(totalSavings);
@@ -1258,6 +1330,29 @@ function addOperation() {
 
   document.getElementById("opName").value = "";
   document.getElementById("opAmount").value = "";
+
+function animateNumber(el, value) {
+
+  let start = 0;
+
+  const duration = 1000;
+  const step = value / (duration / 16);
+
+  const timer = setInterval(() => {
+
+    start += step;
+
+    if (start >= value) {
+      start = value;
+      clearInterval(timer);
+    }
+
+    el.textContent =
+      Math.round(start).toLocaleString("ru-RU");
+
+  }, 16);
+
+}
 
   renderAll();
   
@@ -2883,6 +2978,43 @@ async function saveOperationToCloud(operation) {
 }
 
 </script>
+
+<body>
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background:
+  radial-gradient(
+    circle at 20% 20%,
+    rgba(59,130,246,.2),
+    transparent 40%
+  ),
+  radial-gradient(
+    circle at 80% 80%,
+    rgba(168,85,247,.2),
+    transparent 40%
+  );
+
+  animation: moveBg 12s linear infinite;
+}
+
+@keyframes moveBg {
+
+  0% {
+    transform: translate(0,0);
+  }
+
+  50% {
+    transform: translate(-30px,-20px);
+  }
+
+  100% {
+    transform: translate(0,0);
+  }
+
+}
 
 </body>
 </html>
