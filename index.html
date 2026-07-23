@@ -41,6 +41,36 @@
           <button class="btn" onclick="installPWA()">📲 Установить</button>
         </div>
       </section>
+      <section class="panel" id="authPanel" style="margin-bottom:22px;">
+        <div class="panel-title">☁️ Аккаунт</div>
+       
+        <div id="loggedOutBox">
+          <div class="form-grid">
+            <input id="authEmail" class="form-input" type="email" placeholder="Email">
+            <input id="authPassword" class="form-input" type="password" placeholder="Пароль">
+          </div>
+       
+          <div class="form-actions" style="margin-top:14px;">
+            <button class="form-btn form-btn-green" onclick="signUpWithEmail()">Регистрация</button>
+            <button class="form-btn" onclick="signInWithEmail()">Войти</button>
+          </div>
+       
+          <div style="margin-top:12px;color:var(--muted);font-size:13px;">
+            После входа операции будут сохраняться в аккаунт.
+          </div>
+        </div>
+       
+        <div id="loggedInBox" style="display:none;">
+          <div id="authUserEmail" style="font-weight:900;font-size:18px;"></div>
+       
+          <div class="form-actions" style="margin-top:14px;">
+            <button class="form-btn form-btn-danger" onclick="signOutSupabase()">Выйти</button>
+            <button class="form-btn" onclick="loadOperationsFromCloud()">🔄 Синхронизировать</button>
+          </div>
+        </div>
+       
+        <div id="cloudStatus" style="margin-top:15px;color:var(--muted);"></div>
+      </section>
       <section class="panel" data-id="commands-panel" draggable="true">
         <div class="panel-title">⚡ Командный центр</div>
         <div class="quick-actions">
