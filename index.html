@@ -556,5 +556,29 @@ function togglePasswordVisibility() {
     {updateKPI();renderOperations();renderLists();renderCalendar();updateForecast();animateCharts();runAIAssistant()}
     window.addEventListener('load',init);window.addEventListener('resize',()=>{drawIncomeChart(1);drawExpenseChart(1);drawCashFlowChart(1)});
   </script>
+  
+  <script>
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      const splash = document.getElementById("splash");
+ 
+      if (splash) {
+        splash.style.opacity = "0";
+        splash.style.visibility = "hidden";
+        splash.style.display = "none";
+      }
+    }, 1200);
+  });
+ 
+  setTimeout(function () {
+    const splash = document.getElementById("splash");
+ 
+    if (splash) {
+      splash.style.opacity = "0";
+      splash.style.visibility = "hidden";
+      splash.style.display = "none";
+    }
+  }, 2500);
+</script>
 </body>
 </html>
