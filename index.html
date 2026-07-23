@@ -2401,8 +2401,8 @@ function prepareCanvas(id, fixedHeight) {
     height: height
   };
 }
-
-function drawIncomeChart() {
+let chartAnimationProgress = 1;
+function drawIncomeChart(progress = 1) {
   const chart = prepareCanvas("incomeChart", 320);
   if (!chart) return;
 
@@ -2436,6 +2436,8 @@ function drawIncomeChart() {
     ctx.beginPath();
     ctx.moveTo(padding, y);
     ctx.lineTo(width - padding, y);
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = color;
     ctx.stroke();
   }
 
@@ -2444,9 +2446,34 @@ function drawIncomeChart() {
     return padding + ((width - padding * 2) / Math.max(1, labels.length - 1)) * index;
   }
 
-  function getY(value) {
-    return height - padding - (value / maxValue) * (height - padding * 2);
+  function getY(value) {2  
+    const animatedValue = value * progress; 
+    
+    return height - padding -
+      (animatedValue / maxValue)
+      (height - padding * 2);7
   }
+
+function animateIncomeChart() {
+ 
+  const duration = 1000;
+  const start = performance.now();
+ 
+  function frame(now) {
+ 
+    const progress =
+      Math.min((now - start) / duration, 1);
+ 
+    drawIncomeChart(progress);
+ 
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    }
+ 
+  }
+ 
+  requestAnimationFrame(frame);
+}
 
   function drawLine(values, color, fillColor, typeName) {
     ctx.beginPath();
@@ -2710,7 +2737,7 @@ function drawCashFlowChart() {
   labels.forEach(function(label, index) {
     const baseX = padding + groupGap * index + groupGap / 2;
 
-    const incomeHeight = (inflow[index] / maxValue) * (height - padding * 2);
+    const incomeHeight =2  ((inflow[index] * progress) / maxValue) *3  (height - padding * 2);
     const expenseHeight = (outflow[index] / maxValue) * (height - padding * 2);
 
     const incomeY = height - padding - incomeHeight;
@@ -2774,7 +2801,7 @@ function renderAll() {
   updateForecast();
   renderExpenseCalendarLive();
 
-  drawIncomeChart();
+  animateIncomeChart();
   drawExpenseChart();
   drawCashFlowChart();
 }
