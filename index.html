@@ -350,7 +350,18 @@ function parseVoice(text) {
     async function loadOperationsFromCloud(){if(!currentSupabaseUser||!supabaseClient)return;const r=await supabaseClient.from('operations').select('*').eq('user_id',currentSupabaseUser.id).order('created_at',{ascending:false});if(r.error)return console.warn(r.error);operations=r.data.map(o=>({id:o.id,date:o.date,type:o.type,category:o.category,name:o.name,amount:Number(o.amount),currency:o.currency||'PLN'}));saveOps();renderAll()}
     async function saveOperationToCloud(op){if(!currentSupabaseUser||!supabaseClient)return;const r=await supabaseClient.from('operations').insert({user_id:currentSupabaseUser.id,date:op.date,type:op.type,category:op.category,name:op.name,amount:Number(op.amount),currency:op.currency});if(r.error)console.warn(r.error)}
     async function saveGoalToCloud(){if(!currentSupabaseUser||!supabaseClient)return;await supabaseClient.from('user_goals').upsert({user_id:currentSupabaseUser.id,goal_amount:Number(localStorage.financeGoalAmount)||100000})}
-    function renderAll()
+    function renderAll() {
+  updateKPI();
+  renderOperations();
+  renderLists();
+  renderCalendar();
+  updateForecast();
+  animateCharts();
+  runAIAssistant();
+}
+ 
+window.addEventListener("load", init);
+
     function setCloudStatus(text, color) {
       const el = document.getElementById("cloudStatus");
       if (!el) return;
