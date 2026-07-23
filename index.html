@@ -351,234 +351,234 @@ function parseVoice(text) {
     async function saveOperationToCloud(op){if(!currentSupabaseUser||!supabaseClient)return;const r=await supabaseClient.from('operations').insert({user_id:currentSupabaseUser.id,date:op.date,type:op.type,category:op.category,name:op.name,amount:Number(op.amount),currency:op.currency});if(r.error)console.warn(r.error)}
     async function saveGoalToCloud(){if(!currentSupabaseUser||!supabaseClient)return;await supabaseClient.from('user_goals').upsert({user_id:currentSupabaseUser.id,goal_amount:Number(localStorage.financeGoalAmount)||100000})}
     function renderAll()
-function setCloudStatus(text, color) {
-  const el = document.getElementById("cloudStatus");
-  if (!el) return;
- 
-  el.textContent = text;
-  el.style.color = color || "var(--muted)";
-}
- 
-function updateAuthUI() {
-  const loggedOutBox = document.getElementById("loggedOutBox");
-  const loggedInBox = document.getElementById("loggedInBox");
-  const emailBox = document.getElementById("authUserEmail");
- 
-  if (!loggedOutBox || !loggedInBox) return;
- 
-  if (currentSupabaseUser) {
-    loggedOutBox.style.display = "none";
-    loggedInBox.style.display = "block";
- 
-    if (emailBox) {
-      emailBox.textContent = "👋 " + currentSupabaseUser.email;
+    function setCloudStatus(text, color) {
+      const el = document.getElementById("cloudStatus");
+      if (!el) return;
+     
+      el.textContent = text;
+      el.style.color = color || "var(--muted)";
     }
- 
-    setCloudStatus("✅ Вы вошли в аккаунт", "#22c55e");
-  } else {
-    loggedOutBox.style.display = "block";
-    loggedInBox.style.display = "none";
- 
-    setCloudStatus("Войдите или зарегистрируйтесь", "var(--muted)");
-  }
-}
- 
-async function signUpWithEmail() {
-  if (!supabaseClient) {
-    alert("Supabase не подключён");
-    return;
-  }
- 
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value;
- 
-  if (!email || !password) {
-    alert("Введите email и пароль");
-    return;
-  }
- 
-  if (password.length < 6) {
-    alert("Пароль должен быть минимум 6 символов");
-    return;
-  }
- 
-  const result = await supabaseClient.auth.signUp({
-    email: email,
-    password: password
-  });
- 
-  if (result.error) {
-    alert(result.error.message);
-    setCloudStatus("❌ " + result.error.message, "#ef4444");
-    return;
-  }
- 
-  setCloudStatus(
-    "📩 Регистрация создана. Если включено подтверждение email — проверьте почту.",
-    "#fbbf24"
-  );
- 
-  alert("Регистрация создана. Проверьте почту или попробуйте войти.");
-}
- 
-async function signInWithEmail() {
-  if (!supabaseClient) {
-    alert("Supabase не подключён");
-    return;
-  }
- 
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value;
- 
-  if (!email || !password) {
-    alert("Введите email и пароль");
-    return;
-  }
- 
-  const result = await supabaseClient.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
- 
-  if (result.error) {
-    alert(result.error.message);
-    setCloudStatus("❌ " + result.error.message, "#ef4444");
-    return;
-  }
- 
-  currentSupabaseUser = result.data.user;
- 
-  updateAuthUI();
- 
-  await loadOperationsFromCloud();
-  await loadGoalFromCloud();
- 
-  renderAll();
- 
-  setCloudStatus("✅ Вход выполнен", "#22c55e");
-}
- 
-async function signOutSupabase() {
-  if (!supabaseClient) return;
- 
-  const result = await supabaseClient.auth.signOut();
- 
-  if (result.error) {
-    alert(result.error.message);
-    return;
-  }
- 
-  currentSupabaseUser = null;
-  operations = [];
- 
-  localStorage.removeItem("financeOperations");
- 
-  updateAuthUI();
-  renderAll();
- 
-  setCloudStatus("Вы вышли из аккаунта", "var(--muted)");
-}
- 
-async function refreshSupabaseUser() {
-  if (!supabaseClient) return;
- 
-  try {
-    const result = await supabaseClient.auth.getUser();
- 
-    currentSupabaseUser = result.data.user;
- 
-    updateAuthUI();
- 
-    if (currentSupabaseUser) {
+     
+    function updateAuthUI() {
+      const loggedOutBox = document.getElementById("loggedOutBox");
+      const loggedInBox = document.getElementById("loggedInBox");
+      const emailBox = document.getElementById("authUserEmail");
+     
+      if (!loggedOutBox || !loggedInBox) return;
+     
+      if (currentSupabaseUser) {
+        loggedOutBox.style.display = "none";
+        loggedInBox.style.display = "block";
+     
+        if (emailBox) {
+          emailBox.textContent = "👋 " + currentSupabaseUser.email;
+        }
+     
+        setCloudStatus("✅ Вы вошли в аккаунт", "#22c55e");
+      } else {
+        loggedOutBox.style.display = "block";
+        loggedInBox.style.display = "none";
+     
+        setCloudStatus("Войдите или зарегистрируйтесь", "var(--muted)");
+      }
+    }
+     
+    async function signUpWithEmail() {
+      if (!supabaseClient) {
+        alert("Supabase не подключён");
+        return;
+      }
+     
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value;
+     
+      if (!email || !password) {
+        alert("Введите email и пароль");
+        return;
+      }
+     
+      if (password.length < 6) {
+        alert("Пароль должен быть минимум 6 символов");
+        return;
+      }
+     
+      const result = await supabaseClient.auth.signUp({
+        email: email,
+        password: password
+      });
+     
+      if (result.error) {
+        alert(result.error.message);
+        setCloudStatus("❌ " + result.error.message, "#ef4444");
+        return;
+      }
+     
+      setCloudStatus(
+        "📩 Регистрация создана. Если включено подтверждение email — проверьте почту.",
+        "#fbbf24"
+      );
+     
+      alert("Регистрация создана. Проверьте почту или попробуйте войти.");
+    }
+     
+    async function signInWithEmail() {
+      if (!supabaseClient) {
+        alert("Supabase не подключён");
+        return;
+      }
+     
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value;
+     
+      if (!email || !password) {
+        alert("Введите email и пароль");
+        return;
+      }
+     
+      const result = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+     
+      if (result.error) {
+        alert(result.error.message);
+        setCloudStatus("❌ " + result.error.message, "#ef4444");
+        return;
+      }
+     
+      currentSupabaseUser = result.data.user;
+     
+      updateAuthUI();
+     
       await loadOperationsFromCloud();
       await loadGoalFromCloud();
+     
+      renderAll();
+     
+      setCloudStatus("✅ Вход выполнен", "#22c55e");
     }
-  } catch (error) {
-    console.warn(error);
-    updateAuthUI();
-  }
-}
- 
-async function loadGoalFromCloud() {
-  if (!currentSupabaseUser || !supabaseClient) return;
- 
-  const result = await supabaseClient
-    .from("user_goals")
-    .select("*")
-    .eq("user_id", currentSupabaseUser.id)
-    .maybeSingle();
- 
-  if (result.error) {
-    console.warn(result.error);
-    return;
-  }
- 
-  if (result.data) {
-    localStorage.setItem(
-      "financeGoalAmount",
-      String(result.data.goal_amount || 100000)
-    );
-  }
-}
- 
-async function saveGoalToCloud() {
-  if (!currentSupabaseUser || !supabaseClient) return;
- 
-  const goal = Number(localStorage.getItem("financeGoalAmount")) || 100000;
- 
-  const result = await supabaseClient
-    .from("user_goals")
-    .upsert({
-      user_id: currentSupabaseUser.id,
-      goal_amount: goal,
-      updated_at: new Date().toISOString()
-    });
- 
-  if (result.error) {
-    console.warn(result.error);
-  }
-}
- 
-function togglePasswordVisibility() {
-  const input = document.getElementById("authPassword");
-  const button = document.querySelector(".password-eye");
- 
-  if (!input) return;
- 
-  if (input.type === "password") {
-    input.type = "text";
-    if (button) button.textContent = "🙈";
-  } else {
-    input.type = "password";
-    if (button) button.textContent = "👁";
-  }
-}
-    {updateKPI();renderOperations();renderLists();renderCalendar();updateForecast();animateCharts();runAIAssistant()}
-    window.addEventListener('load',init);window.addEventListener('resize',()=>{drawIncomeChart(1);drawExpenseChart(1);drawCashFlowChart(1)});
-  </script>
-  
-  <script>
-  window.addEventListener("load", function () {
-    setTimeout(function () {
-      const splash = document.getElementById("splash");
- 
-      if (splash) {
-        splash.style.opacity = "0";
-        splash.style.visibility = "hidden";
-        splash.style.display = "none";
+     
+    async function signOutSupabase() {
+      if (!supabaseClient) return;
+     
+      const result = await supabaseClient.auth.signOut();
+     
+      if (result.error) {
+        alert(result.error.message);
+        return;
       }
-    }, 1200);
-  });
- 
-  setTimeout(function () {
-    const splash = document.getElementById("splash");
- 
-    if (splash) {
-      splash.style.opacity = "0";
-      splash.style.visibility = "hidden";
-      splash.style.display = "none";
+     
+      currentSupabaseUser = null;
+      operations = [];
+     
+      localStorage.removeItem("financeOperations");
+     
+      updateAuthUI();
+      renderAll();
+     
+      setCloudStatus("Вы вышли из аккаунта", "var(--muted)");
     }
-  }, 2500);
+     
+    async function refreshSupabaseUser() {
+      if (!supabaseClient) return;
+     
+      try {
+        const result = await supabaseClient.auth.getUser();
+     
+        currentSupabaseUser = result.data.user;
+     
+        updateAuthUI();
+     
+        if (currentSupabaseUser) {
+          await loadOperationsFromCloud();
+          await loadGoalFromCloud();
+        }
+      } catch (error) {
+        console.warn(error);
+        updateAuthUI();
+      }
+    }
+     
+    async function loadGoalFromCloud() {
+      if (!currentSupabaseUser || !supabaseClient) return;
+     
+      const result = await supabaseClient
+        .from("user_goals")
+        .select("*")
+        .eq("user_id", currentSupabaseUser.id)
+        .maybeSingle();
+     
+      if (result.error) {
+        console.warn(result.error);
+        return;
+      }
+     
+      if (result.data) {
+        localStorage.setItem(
+          "financeGoalAmount",
+          String(result.data.goal_amount || 100000)
+        );
+      }
+    }
+     
+    async function saveGoalToCloud() {
+      if (!currentSupabaseUser || !supabaseClient) return;
+     
+      const goal = Number(localStorage.getItem("financeGoalAmount")) || 100000;
+     
+      const result = await supabaseClient
+        .from("user_goals")
+        .upsert({
+          user_id: currentSupabaseUser.id,
+          goal_amount: goal,
+          updated_at: new Date().toISOString()
+        });
+     
+      if (result.error) {
+        console.warn(result.error);
+      }
+    }
+     
+    function togglePasswordVisibility() {
+      const input = document.getElementById("authPassword");
+      const button = document.querySelector(".password-eye");
+     
+      if (!input) return;
+     
+      if (input.type === "password") {
+        input.type = "text";
+        if (button) button.textContent = "🙈";
+      } else {
+        input.type = "password";
+        if (button) button.textContent = "👁";
+      }
+    }
+        {updateKPI();renderOperations();renderLists();renderCalendar();updateForecast();animateCharts();runAIAssistant()}
+        window.addEventListener('load',init);window.addEventListener('resize',()=>{drawIncomeChart(1);drawExpenseChart(1);drawCashFlowChart(1)});
+      </script>
+      
+      <script>
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          const splash = document.getElementById("splash");
+     
+          if (splash) {
+            splash.style.opacity = "0";
+            splash.style.visibility = "hidden";
+            splash.style.display = "none";
+          }
+        }, 1200);
+      });
+     
+      setTimeout(function () {
+        const splash = document.getElementById("splash");
+     
+        if (splash) {
+          splash.style.opacity = "0";
+          splash.style.visibility = "hidden";
+          splash.style.display = "none";
+        }
+      }, 2500);
 </script>
 </body>
 </html>
