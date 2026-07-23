@@ -44,19 +44,12 @@
       <section class="panel" data-id="commands-panel" draggable="true">
         <div class="panel-title">⚡ Командный центр</div>
         <div class="quick-actions">
-          <button class="form-btn form-btn-green" onclick="quickAdd('Доход','Зарплата',9195,'PLN','Зарплата')">+ Зарплата</button>
-          <button class="form-btn form-btn-danger" onclick="quickAdd('Расход','Жилье',3043,'PLN','Квартира')">+ Квартира</button>
-          <button class="form-btn" onclick="quickAdd('Расход','Еда',100,'PLN','Еда')">+ Еда 100</button>
-          <button class="form-btn" onclick="quickAdd('Расход','Кафе',50,'PLN','Кафе')">+ Кафе 50</button>
-          <button class="form-btn form-btn-green" onclick="quickAdd('Накопления','Накопления',500,'PLN','Накопления')">+ Накопления</button>
           <button class="form-btn" onclick="startVoiceInput()">🎙️ Голосовой расход</button>
           <button class="form-btn" onclick="resetFilters()">🔄 Сбросить фильтры</button>
           <button class="form-btn" onclick="exportCSV()">⬇️ CSV</button>
           <button class="form-btn" onclick="exportJSON()">💾 Backup JSON</button>
           <button class="form-btn" onclick="document.getElementById('importJSON').click()">📥 Import JSON</button>
           <button class="form-btn" onclick="document.getElementById('importCSV').click()">📥 Import CSV</button>
-          <button class="form-btn" onclick="resetLayoutOrder()">🧩 Сброс layout</button>
-          <button class="form-btn form-btn-danger" onclick="clearCurrentPeriod()">🧹 Очистить период</button>
         </div>
         <input id="importJSON" class="file-input" type="file" accept="application/json" onchange="importJSON(event)">
         <input id="importCSV" class="file-input" type="file" accept=".csv,text/csv" onchange="importCSV(event)">
