@@ -588,6 +588,41 @@
         padding: 18px;
       }
     }
+       .smart-tooltip {
+      position: fixed;
+      z-index: 999999;
+      max-width: 340px;
+      background: rgba(2, 6, 23, 0.96);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      font-size: 13px;
+      line-height: 1.55;
+      pointer-events: none;
+      display: none;
+    }
+     
+    .smart-tooltip b {
+      color: #ffffff;
+    }
+     
+    .smart-tooltip .green {
+      color: #22c55e;
+    }
+     
+    .smart-tooltip .red {
+      color: #ef4444;
+    }
+     
+    .smart-tooltip .blue {
+      color: #3b82f6;
+    }
+     
+    .smart-tooltip .muted {
+      color: #94a3b8;
+    } 
   </style>
 </head>
  
@@ -2749,10 +2784,256 @@ function renderAll() {
   updateForecast();
   animateCharts();
   runAIAssistant();
+  initSmartHoverTooltips();
 }
  
 window.addEventListener('load', init);
+ function getSmartTooltipElement() {
+  let tooltip = document.getElementById('smartTooltip');
  
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.id = 'smartTooltip';
+    tooltip.className = 'smart-tooltip';
+    document.body.appendChild(tooltip);
+  }
+ 
+  return tooltip;
+}
+ 
+function showSmartTooltip(html, event) {
+  const tooltip = getSmartTooltipElement();
+ 
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+ 
+  const padding = 18;
+  const rect = tooltip.getBoundingClientRect();
+ 
+  let left = event.clientX + padding;
+  let top = event.clientY + padding;
+ 
+  if (left + rect.width > window.innerWidth) {
+    left = event.clientX - rect.width - padding;
+  }
+ 
+  if (top + rect.height > window.innerHeight) {
+    top = event.clientY - rect.height - padding;
+  }
+ 
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+ 
+function hideSmartTooltip() {
+  const tooltip = document.getElementById('smartTooltip');
+ 
+  if (tooltip) {
+    tooltip.style.display = 'none';
+  }
+}
+ 
+function getExpenseBreakdownHTML(list) {
+  const expensesOnly = list.filter(function(op) {
+    return op.type === 'Расход';
+  });
+ 
+  const groups = {};
+ 
+  expensesOnly.forEach(function(op) {
+    const category = op.category || 'Прочее';
+    groups[category] = (groups[category] || 0) + Number(op.amount || 0);
+  });
+ 
+  const rows = Object.entries(groups)
+    .sort(function(a, b) {
+      return b[1] - a[1];
+    })
+    .slice(0, 8);
+ 
+  if (!rows.length) {
+    return '<div class="muted">Расходов нет</div>';
+  }
+ 
+  return rows
+    .map(function(row) {
+      return (
+        '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+          '<span>' + escapeHTML(row[0]) + '</span>' +
+          '<b class="red">' + money(row[1]) + ' PLN</b>' +
+        '</div>'
+      );
+    })
+    .join('');
+}
+ 
+function getPeriodSummaryTooltip(title) {
+  const list = periodOps();
+ 
+  const income = list
+    .filter(function(op) {
+      return op.type === 'Доход';
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  const expense = list
+    .filter(function(op) {
+      return op.type === 'Расход';
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  const saving = list
+    .filter(function(op) {
+      return isSavings(op);
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  const balance = income - expense;
+ 
+  return (
+    '<b>' + title + '</b>' +
+    '<br><br>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Доходы</span>' +
+      '<b class="green">' + money(income) + ' PLN</b>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Расходы</span>' +
+      '<b class="red">' + money(expense) + ' PLN</b>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Накопления</span>' +
+      '<b class="blue">' + money(saving) + ' PLN</b>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Баланс</span>' +
+      '<b class="' + (balance >= 0 ? 'green' : 'red') + '">' + money(balance) + ' PLN</b>' +
+    '</div>' +
+    '<br>' +
+    '<b>Расходы по категориям:</b>' +
+    '<br>' +
+    getExpenseBreakdownHTML(list)
+  );
+}
+ 
+function findPanelByTitle(partialTitle) {
+  const panels = Array.from(document.querySelectorAll('.panel, .mini-card'));
+ 
+  return panels.find(function(panel) {
+    const title = panel.querySelector('.panel-title');
+ 
+    return title && title.textContent.includes(partialTitle);
+  });
+}
+ 
+function attachPanelTooltip(partialTitle, tooltipTitle) {
+  const panel = findPanelByTitle(partialTitle);
+ 
+  if (!panel) return;
+ 
+  panel.onmousemove = function(event) {
+    showSmartTooltip(getPeriodSummaryTooltip(tooltipTitle), event);
+  };
+ 
+  panel.onmouseleave = hideSmartTooltip;
+}
+ 
+function getCalendarDateFromCell(cell) {
+  const day = Number(cell.textContent);
+ 
+  if (!day) return null;
+ 
+  const key =
+    document.getElementById('periodMode').value === 'month'
+      ? document.getElementById('periodMonth').value
+      : monthISO();
+ 
+  return key + '-' + String(day).padStart(2, '0');
+}
+ 
+function getDayTooltipHTML(date) {
+  const dayOps = operations
+    .filter(function(op) {
+      return op.date === date;
+    })
+    .map(convert);
+ 
+  const income = dayOps
+    .filter(function(op) {
+      return op.type === 'Доход';
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  const expense = dayOps
+    .filter(function(op) {
+      return op.type === 'Расход';
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  const saving = dayOps
+    .filter(function(op) {
+      return isSavings(op);
+    })
+    .reduce(function(sum, op) {
+      return sum + Number(op.amount || 0);
+    }, 0);
+ 
+  return (
+    '<b>📅 ' + date + '</b>' +
+    '<br><br>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Доходы</span>' +
+      '<b class="green">' + money(income) + ' PLN</b>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Расходы</span>' +
+      '<b class="red">' + money(expense) + ' PLN</b>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:18px;">' +
+      '<span>Накопления</span>' +
+      '<b class="blue">' + money(saving) + ' PLN</b>' +
+    '</div>' +
+    '<br>' +
+    '<b>Расходы за день:</b>' +
+    '<br>' +
+    getExpenseBreakdownHTML(dayOps)
+  );
+}
+ 
+function attachCalendarTooltips() {
+  const cells = document.querySelectorAll('#calendarGrid .day-cell');
+ 
+  cells.forEach(function(cell) {
+    cell.onmousemove = function(event) {
+      const date = getCalendarDateFromCell(cell);
+ 
+      if (!date) return;
+ 
+      showSmartTooltip(getDayTooltipHTML(date), event);
+    };
+ 
+    cell.onmouseleave = hideSmartTooltip;
+  });
+}
+ 
+function initSmartHoverTooltips() {
+  attachPanelTooltip('Динамика доходов и расходов', '📈 Динамика доходов и расходов');
+  attachPanelTooltip('Структура расходов', '🍩 Структура расходов');
+  attachPanelTooltip('Cash Flow', '📊 Cash Flow');
+  attachPanelTooltip('Календарь трат', '📅 Календарь трат');
+ 
+  attachCalendarTooltips();
+}
 window.addEventListener('resize', () => {
   drawIncomeChart(1);
   drawExpenseChart(1);
